@@ -18,6 +18,7 @@ public class AnalizadorLexico
     private boolean error;                          // Atributo para controlar si se ha dado un error léxico
     private final ArrayList<Integer> estados;       // Almacena los estados que se están recorriendo para el token
     private char c;                                 // Variable utilizada para leer el fichero
+    private boolean sintactico;                     // Conprueba si se está ejecutando desde un analizador sintáctico
 
 
     //////////////////////////////////////////////////////////////////////
@@ -34,6 +35,7 @@ public class AnalizadorLexico
         error = false;
         estados = new ArrayList<Integer>();
         c = '\u0000';
+        sintactico = false;
     }
 
 
@@ -333,6 +335,12 @@ public class AnalizadorLexico
     //////////////////////////////////////////////////////////////////////
     // FUNCIONES PÚBLICAS
     //////////////////////////////////////////////////////////////////////
+    // Cambia el valor de la variable sintactico
+    public void setSintactico (Boolean s)
+    {
+        sintactico = s;
+    }
+
     // Sigue leyendo el fichero hasta obtener el siguiente token
     public Token siguienteToken ()
     {
@@ -341,6 +349,7 @@ public class AnalizadorLexico
         // Comprueba que la búsqueda del token anterior no hubiese acabado encontrando un error léxico
         if (error)
         {
+            if (sintactico) throw new RuntimeException();
             System.err.printf("Error lexico (%d,%d): caracter '%c' incorrecto\n", fila, columna - palabra_actual.length(), c);
             System.exit(-1);
         }
