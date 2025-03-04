@@ -1,0 +1,68 @@
+Fun	−→ Tipo id Args Bloque		|	PRIM(Tipo, id, Args, Bloque) = {int, float}
+Tipo	−→ int				|	{int}
+Tipo	−→ float			|	{float}
+Args	−→ pari LArgs pard		|	{pari}
+LArgs	−→ A MasArgs			|	PRIM(A, MasArgs) = {int, float}
+LArgs	−→ ϵ				|	SIG(LArgs) = {pard}
+MasArgs	−→ coma A MasArgs		|	{coma}
+MasArgs	−→ ϵ				|	SIG(MasArgs) = {pard}
+A	−→ Tipo Var			|	PRIM(Tipo, Var) = {int, float}
+Var	−→ amp id			|	{amp}
+Var	−→ id				|	{id}
+Bloque	−→ llavei SInstr llaved	|	{llavei}
+SInstr	−→ Instr SInstrp		|	PRIM(Instr, SInstrp) = {id, if, llavei, int, float}
+SInstrp	−→ Instr SInstrp		|	PRIM(Instr, SInstrp) = {id, if, llavei, int, float}
+SInstrp	−→ ϵ				|	SIG(SInstrp) = {llaved} 
+Instr	−→ Bloque			|	PRIM(Bloque) = {llavei}
+Instr	−→ id asig E pyc		|	{id}
+Instr	−→ if pari E pard Instr	|	{if}
+Instr	−→ Tipo id Init		|	PRIM(Tipo, id, Init) = {int, float}
+Init	−→ pyc				|	{pyc}
+Init	−→ asig E pyc			|	{asig}
+E	−→ T Ep			|	PRIM(T, Ep) = {numentero, numreal, id}
+Ep	−→ opas T Ep			|	{opas}
+Ep	−→ ϵ				|	SIG(Ep) = {pyc, pard}
+T	−→ numentero			|	{numentero}
+T	−→ numreal			|	{numreal}
+T	−→ id				|	{id}
+
+-----------------------------------------------------
+
+PRIM(T)		= {numentero, numreal, id}
+PRIM(Ep)	= {opas, ϵ}
+PRIM(E) 	= PRIM(T) = {numentero, numreal, id}
+PRIM(Init) 	= {pyc, asig}
+PRIM(Instr)	= {id, if} U PRIM(Bloque) U PRIM(Tipo) =  {id, if, llavei, int, float}
+PRIM(SInstrp)	= {ϵ} U PRIM(Instr) = {ϵ, id, if, llavei, int, float}
+PRIM(SInstr)	= PRIM(Instr) = {id, if, llavei, int, float}
+PRIM(Bloque) 	= {llavei}
+PRIM(Var) 	= {amp, id}
+PRIM(A) 	= PRIM(Tipo) = {int, float}
+PRIM(MasArgs) 	= {coma, ϵ}
+PRIM(LArgs)	= {ϵ} U PRIM(A) = {int, float}
+PRIM(Args)	= {pari}
+PRIM(Tipo)	= {int, float}
+PRIM(Fun)	= PRIM(Tipo) = {int, float}
+
+-----------------------------------------------------
+
+SIG(Fun)	= {$}
+SIG(Tipo)	= {id} U PRIM(Var) = {id, amp}
+SIG(Args)	= PRIM(Bloque) = {llavei}
+SIG(LArgs)	= {pard}
+SIG(MasArgs)	= SIG(LArgs) U SIG(MasArgs) = {pard}
+SIG(A)		= PRIM(MasArgs) = {coma, ϵ}
+SIG(Var)	= SIG(A) = {coma, ϵ}
+SIG(Bloque)	= SIG(Fun) U SIG(Instr) = {$}
+SIG(SInstr)	= {llaved}
+SIG(SInstrp)	= SIG(SInstr) U SIG(SInstrp) = {llaved} 
+SIG(Instr)	= PRIM(SInstrp) U SIG(Instr) = {ϵ, id, if, llavei, int, float}
+SIG(Init)	= SIG(Instr) = {ϵ, id, if, llavei, int, float}
+SIG(E)		= {pyc, pard}
+SIG(Ep)		= SIG(E) U SIG(Ep) = {pyc, pard}
+SIG(T)		= PRIM(Ep) = {opas, ϵ}
+
+-----------------------------------------------------
+
+Es LL(1)
+
