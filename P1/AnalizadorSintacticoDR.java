@@ -281,7 +281,7 @@ public class AnalizadorSintacticoDR
         if (t.tipo == Token.ENTERO)     sol.append(" 25");
         else if (t.tipo == Token.REAL)  sol.append(" 26");
         else if (t.tipo == Token.ID)    sol.append(" 27");
-        else                            errorSintactico(t, "identificador numentero numreal");
+        else                            errorSintactico(t, "identificador numero entero numero real");
     }
 
     // Guarda los tokens en la estructura Queue<Token> tokens

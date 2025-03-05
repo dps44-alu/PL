@@ -60,7 +60,7 @@ SIG(Instr)	= PRIM(SInstrp) U SIG(Instr) = {ϵ, id, if, llavei, int, float}
 SIG(Init)	= SIG(Instr) = {ϵ, id, if, llavei, int, float}
 SIG(E)		= {pyc, pard}
 SIG(Ep)		= SIG(E) U SIG(Ep) = {pyc, pard}
-SIG(T)		= PRIM(Ep) = {opas, ϵ}
+SIG(T)		= PRIM(Ep) U SIG(E) = {opas, pyc, pard}
 
 -----------------------------------------------------
 
