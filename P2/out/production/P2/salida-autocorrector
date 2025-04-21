@@ -1,0 +1,92 @@
+*********************************************************
+Autocorrector plp2 
+ Generando ficheros auxiliares... 
+*********************************************************
+ Compilando...
+*********************************************************
+
+*********************************************************
+ Ejecutando y comprobando salida a la vez...
+*********************************************************
+Prueba: p01
+--- Fallo en la traducción ----------
+0a1
+> 1 4 5 7 4 5 8 11 14 11 14 12 14 6 10 3 5 9 8 11 13 12 13 12 13 5 10 3 6 10 2 3 
+--------------------------
+Prueba: p02
+--- Fallo en los errores ----------
+1,8c1
+< Exception in thread "main" java.lang.IndexOutOfBoundsException: Index -1 out of bounds for length 33
+< 	at java.base/jdk.internal.util.Preconditions.outOfBounds(Preconditions.java:100)
+< 	at java.base/jdk.internal.util.Preconditions.outOfBoundsCheckIndex(Preconditions.java:106)
+< 	at java.base/jdk.internal.util.Preconditions.checkIndex(Preconditions.java:302)
+< 	at java.base/java.util.Objects.checkIndex(Objects.java:385)
+< 	at java.base/java.util.ArrayList.get(ArrayList.java:427)
+< 	at AnalizadorSintacticoSLR.analizar(AnalizadorSintacticoSLR.java:454)
+< 	at plp2.main(plp2.java:15)
+---
+> Error sintactico (4,11): encontrado '9', esperaba identificador 
+--------------------------
+Prueba: p03
+--- Fallo en los errores ----------
+1,8c1
+< Exception in thread "main" java.lang.IndexOutOfBoundsException: Index -1 out of bounds for length 33
+< 	at java.base/jdk.internal.util.Preconditions.outOfBounds(Preconditions.java:100)
+< 	at java.base/jdk.internal.util.Preconditions.outOfBoundsCheckIndex(Preconditions.java:106)
+< 	at java.base/jdk.internal.util.Preconditions.checkIndex(Preconditions.java:302)
+< 	at java.base/java.util.Objects.checkIndex(Objects.java:385)
+< 	at java.base/java.util.ArrayList.get(ArrayList.java:427)
+< 	at AnalizadorSintacticoSLR.analizar(AnalizadorSintacticoSLR.java:454)
+< 	at plp2.main(plp2.java:15)
+---
+> Error sintactico (2,12): encontrado 'int', esperaba ) 
+--------------------------
+Prueba: p04
+--- Fallo en los errores ----------
+1,8c1
+< Exception in thread "main" java.lang.IndexOutOfBoundsException: Index -1 out of bounds for length 33
+< 	at java.base/jdk.internal.util.Preconditions.outOfBounds(Preconditions.java:100)
+< 	at java.base/jdk.internal.util.Preconditions.outOfBoundsCheckIndex(Preconditions.java:106)
+< 	at java.base/jdk.internal.util.Preconditions.checkIndex(Preconditions.java:302)
+< 	at java.base/java.util.Objects.checkIndex(Objects.java:385)
+< 	at java.base/java.util.ArrayList.get(ArrayList.java:427)
+< 	at AnalizadorSintacticoSLR.analizar(AnalizadorSintacticoSLR.java:454)
+< 	at plp2.main(plp2.java:15)
+---
+> Error sintactico: encontrado fin de fichero, esperaba { } 'int' 'float' 'if' identificador 
+--------------------------
+Prueba: p05
+--- Fallo en los errores ----------
+1,8c1
+< Exception in thread "main" java.lang.IndexOutOfBoundsException: Index -1 out of bounds for length 33
+< 	at java.base/jdk.internal.util.Preconditions.outOfBounds(Preconditions.java:100)
+< 	at java.base/jdk.internal.util.Preconditions.outOfBoundsCheckIndex(Preconditions.java:106)
+< 	at java.base/jdk.internal.util.Preconditions.checkIndex(Preconditions.java:302)
+< 	at java.base/java.util.Objects.checkIndex(Objects.java:385)
+< 	at java.base/java.util.ArrayList.get(ArrayList.java:427)
+< 	at AnalizadorSintacticoSLR.analizar(AnalizadorSintacticoSLR.java:454)
+< 	at plp2.main(plp2.java:15)
+---
+> Error sintactico (2,11): encontrado 'int', esperaba ) 
+--------------------------
+Prueba: p06
+--- Fallo en los errores ----------
+1,8c1
+< Exception in thread "main" java.lang.IndexOutOfBoundsException: Index -1 out of bounds for length 33
+< 	at java.base/jdk.internal.util.Preconditions.outOfBounds(Preconditions.java:100)
+< 	at java.base/jdk.internal.util.Preconditions.outOfBoundsCheckIndex(Preconditions.java:106)
+< 	at java.base/jdk.internal.util.Preconditions.checkIndex(Preconditions.java:302)
+< 	at java.base/java.util.Objects.checkIndex(Objects.java:385)
+< 	at java.base/java.util.ArrayList.get(ArrayList.java:427)
+< 	at AnalizadorSintacticoSLR.analizar(AnalizadorSintacticoSLR.java:454)
+< 	at plp2.main(plp2.java:15)
+---
+> Error sintactico (14,8): encontrado 'a', esperaba ) ; + - 
+--------------------------
+
+OJO: FALLAN 6 PRUEBAS DEL AUTOCORRECTOR
+
+
+
+AVISO IMPORTANTE: este autocorrector NO prueba todos los casos posibles
+

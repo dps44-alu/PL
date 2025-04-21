@@ -1,0 +1,36 @@
+Fun	−→ Tipo id pari pard Bloque	|	PRIM(Tipo, id, pari, pard, Bloque) = {int, float}
+Tipo	−→ int				|	{int}	
+Tipo	−→ float			|	{float}
+Bloque	−→ llavei SInstr llaved	|	{llavei}
+SInstr	−→ SInstr Instr		|	PRIM(SInstr, Instr) = {id, if, llavei, int, float}
+SInstr	−→ Instr   			|	PRIM(Instr) = {id, if, llavei, int, float}
+Instr	−→ Bloque			|	PRIM(Bloque) = {llavei}
+Instr	−→ id asig E pyc		|	{id}
+Instr	−→ if pari E pard Instr	|	{if}
+Instr	−→ Tipo id pyc			|	PRIM(Tipo, id, pyc) = {int, float}
+E	−→ E opas T			|	PRIM(E, opas, T) = {numentero, numreal, id}
+E 	−→ T				|	PRIM(T) = {numentero, numreal, id}
+T	−→ numentero			|	{numentero}
+T	−→ numreal			|	{numreal}
+T	−→ id				|	{id}
+
+-----------------------------------------------------
+
+PRIM(T) 	= {numentero, numreal, id}
+PRIM(E) 	= PRIM(T) = {numentero, numreal, id}
+PRIM(Instr) 	= {id, if} U PRIM(Bloque) U PRIM(Tipo) = {id, if, llavei, int, float}
+PRIM(SInstr) 	= PRIM(Instr) = {id, if, llavei, int, float}
+PRIM(Bloque) 	= PRIM(Bloque) = {llavei}
+PRIM(Tipo) 	= {int, float}
+PRIM(Fun) 	= PRIM(Tipo) = {int, float}
+
+-----------------------------------------------------
+
+SIG(Fun) 	= {$}
+SIG(Tipo) 	= {id}
+SIG(Bloque) 	= SIG(Fun) U SIG(Instr) = {$, llaved, id, if, llavei, int, float}
+SIG(SInstr) 	= {llaved} U PRIM(Instr) = {llaved, id, if, llavei, int, float}
+SIG(Instr) 	= SIG(SInstr) = {llaved, id, if, llavei, int, float}
+SIG(E) 		= {opas, pyc, pard}
+SIG(T) 		= SIG(E) = {opas, pyc, pard}
+

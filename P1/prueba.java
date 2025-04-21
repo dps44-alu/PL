@@ -1,23 +1,32 @@
-import java.io.RandomAccessFile;
-import java.io.FileNotFoundException;
+import java.io.*;
 
-class prueba
-{
-    public static void main(String[] args)
-    {
-        try
-        {
-            RandomAccessFile entrada = new RandomAccessFile("fuentes/p04.txt","r");
-            AnalizadorLexico al = new AnalizadorLexico(entrada);
-            AnalizadorSintacticoDR asdr = new AnalizadorSintacticoDR(al);
 
-            asdr.Fun(); // simbolo inicial de la gramatica
-            asdr.comprobarFinFichero();
+class prueba {
+
+    public static String toString(Token t){
+        return "("+t.fila+","+t.columna+"): "+t.lexema+" es de tipo "+t.tipo+'\n';
+    }
+
+
+    public static void main(String[] args) {
+        AnalizadorLexico al;
+        Token t;
+
+        RandomAccessFile entrada = null;
+
+        try {
+            entrada = new RandomAccessFile("nu-fuentes/pc02.txt","r");
+            al = new AnalizadorLexico(entrada);
+
+            while ((t=al.siguienteToken()).tipo != Token.EOF) {
+                System.out.println("Token: "+ t.fila + ","
+                        + t.columna+ " "
+                        + t.lexema+ "  -> "
+                        + toString(t));
+            }
         }
-        catch (FileNotFoundException e)
-        {
-            System.out.println("Error, fichero no encontrado");
+        catch (FileNotFoundException e) {
+            System.out.println("Error, fichero no encontrado: " + args[0]);
         }
     }
 }
-

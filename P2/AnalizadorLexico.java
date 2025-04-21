@@ -22,7 +22,7 @@ public class AnalizadorLexico
 
 
     //////////////////////////////////////////////////////////////////////
-    // CONSTRUCTORES
+    // CONTRUCTORES
     //////////////////////////////////////////////////////////////////////
     public AnalizadorLexico (RandomAccessFile entrada)
     {
@@ -56,7 +56,8 @@ public class AnalizadorLexico
         catch (EOFException e)
         {
             EOF = true;
-            return 'e';
+            if (palabra_actual.isEmpty())   return 'ç';
+            else                            return ' ';
         }
         catch (IOException e)
         {
@@ -226,7 +227,7 @@ public class AnalizadorLexico
     // Comprueba si el estado actual es final y reajusta la lectura en caso de ser necesario
     private boolean esFinal (int estado)
     {
-        if (estado == 1 || estado == 2 || estado == 3 || estado == 4 || estado == 5 || estado == 6 || estado == 7 || estado == 8 || estado == 9)
+        if (estado == 1 || estado == 2 || estado == 5 || estado == 6 || estado == 7 || estado == 8 || estado == 9)
         {
             return true;
         }
@@ -352,9 +353,12 @@ public class AnalizadorLexico
                     System.err.println("Error lexico: fin de fichero inesperado");
                     System.exit(-1);
                 }
-                Token token = new Token();
-                token.tipo = Token.EOF;
-                return token;
+                if (c == 'ç')
+                {
+                    Token token = new Token();
+                    token.tipo = Token.EOF;
+                    return token;
+                }
             }
             if (!comentario) palabra_actual.append(c);
             if (comentario)
@@ -380,11 +384,18 @@ public class AnalizadorLexico
             }
             if (esFinal(nuevo))
             {
+                if (EOF) leerCaracter();
                 estados.clear();
                 return tokenAsociado(nuevo);
             }
             else
             {
+                if (c == 'ç')
+                {
+                    Token token = new Token();
+                    token.tipo = Token.EOF;
+                    return token;
+                }
                 c = leerCaracter();
             }
         } while (true);
@@ -392,6 +403,6 @@ public class AnalizadorLexico
 }
 
 /*
-    1 = PARI, 2 = PARD, 5 = LLAVEI, 6 = LLAVED, 7 = ASIG, 8 = PYC,
+    1 = PARI, 2 = PARD 5 = LLAVEI, 6 = LLAVED, 7 = ASIG, 8 = PYC,
     9 = OPAS, 15 = INT, 16 = IF, 17 = ID, 23 = FLOAT, 25 = ENTERO, 28 = REAL
 */

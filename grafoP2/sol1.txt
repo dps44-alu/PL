@@ -1,0 +1,145 @@
+I-1
+X -> * Fun 	___ I-2 
+Fun -> * Tipo id pari pard Bloque 	___ I-3 
+Tipo -> * int 	___ I-4 
+Tipo -> * float 	___ I-5 
+
+I-2
+X -> Fun * 
+
+I-3
+Fun -> Tipo * id pari pard Bloque 	___ I-6 
+
+I-4
+Tipo -> int * 
+
+I-5
+Tipo -> float * 
+
+I-6
+Fun -> Tipo id * pari pard Bloque 	___ I-7 
+
+I-7
+Fun -> Tipo id pari * pard Bloque 	___ I-8 
+
+I-8
+Fun -> Tipo id pari pard * Bloque 	___ I-9 
+Bloque -> * llavei SInstr llaved 	___ I-10 
+
+I-9
+Fun -> Tipo id pari pard Bloque * 
+
+I-10
+Bloque -> llavei * SInstr llaved 	___ I-11 
+SInstr -> * SInstr Instr 	___ I-12 
+SInstr -> * Instr 	___ I-13 
+Instr -> * Bloque 	___ I-14 
+Instr -> * id asig E pyc 	___ I-15 
+Instr -> * if pari E pard Instr 	___ I-16 
+Instr -> * Tipo id pyc 	___ I-17 
+Bloque -> * llavei SInstr llaved 	___ I-10 
+Tipo -> * int 	___ I-4 
+Tipo -> * float 	___ I-5 
+
+I-11
+Bloque -> llavei SInstr * llaved 	___ I-18 
+
+I-12
+SInstr -> SInstr * Instr 	___ I-19 
+Instr -> * Bloque 	___ I-14 
+Instr -> * id asig E pyc 	___ I-15 
+Instr -> * if pari E pard Instr 	___ I-16 
+Instr -> * Tipo id pyc 	___ I-17 
+Bloque -> * llavei SInstr llaved 	___ I-10 
+Tipo -> * int 	___ I-4 
+Tipo -> * float 	___ I-5 
+
+I-13
+SInstr -> Instr * 
+
+I-14
+Instr -> Bloque * 
+
+I-15
+Instr -> id * asig E pyc 	___ I-20 
+
+I-16
+Instr -> if * pari E pard Instr 	___ I-30 
+
+I-17
+Instr -> Tipo * id pyc 	___ I-34 
+
+I-18
+Bloque -> llavei SInstr llaved * 
+
+I-19
+SInstr -> SInstr Instr * 
+
+I-20
+Instr -> id asig * E pyc 	___ I-21 
+E -> * E opas T 	___ I-22 
+E -> * T 	___ I-23 
+T -> * numentero 	___ I-24 
+T -> * numreal 	___ I-25 
+T -> * id 	___ I-26 
+
+I-21
+Instr -> id asig E * pyc 	___ I-27 
+
+I-22
+E -> E * opas T 	___ I-28 
+
+I-23
+E -> T * 
+
+I-24
+T -> numentero * 
+
+I-25
+T -> numreal * 
+
+I-26
+T -> id * 
+
+I-27
+Instr -> id asig E pyc * 
+
+I-28
+E -> E opas * T 	___ I-29 
+T -> * numentero 	___ I-24 
+T -> * numreal 	___ I-25 
+T -> * id 	___ I-26 
+
+I-29
+E -> E opas T * 
+
+I-30
+Instr -> if pari * E pard Instr 	___ I-31 
+E -> * E opas T 	___ I-22 
+E -> * T 	___ I-23 
+T -> * numentero 	___ I-24 
+T -> * numreal 	___ I-25 
+T -> * id 	___ I-26 
+
+I-31
+Instr -> if pari E * pard Instr 	___ I-32 
+
+I-32
+Instr -> if pari E pard * Instr 	___ I-33 
+Instr -> * Bloque 	___ I-14 
+Instr -> * id asig E pyc 	___ I-15 
+Instr -> * if pari E pard Instr 	___ I-16 
+Instr -> * Tipo id pyc 	___ I-17 
+Bloque -> * llavei SInstr llaved 	___ I-10 
+Tipo -> * int 	___ I-4 
+Tipo -> * float 	___ I-5 
+
+I-33
+Instr -> if pari E pard Instr * 
+
+I-34
+Instr -> Tipo id * pyc 	___ I-35 
+
+I-35
+Instr -> Tipo id pyc * 
+

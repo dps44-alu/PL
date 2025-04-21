@@ -1,0 +1,14 @@
+int pc02(int a)
+{
+ { 
+  {
+    int b =7+2-3;
+  }
+  {
+    float c;
+    c = a;
+  }
+ }
+}
+
+esteTokenSobra

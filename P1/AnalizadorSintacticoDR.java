@@ -229,7 +229,7 @@ public class AnalizadorSintacticoDR
             if (t.tipo != Token.ID) errorSintactico(t, "identificador");
             Init();
         }
-        else    errorSintactico(t, "identificador ( ) = ;");
+        else    errorSintactico(t, "identificador  'int' 'float' { 'if'");
     }
 
     // 20. Init -> pyc
@@ -306,6 +306,7 @@ public class AnalizadorSintacticoDR
     public void Fun ()
     {
         obtenerTokens();
+        //System.out.println(((LinkedList<Token>) tokens).getLast().lexema);
         sol.append(" 1");
         Tipo();
         tokens.poll();  // id
@@ -316,6 +317,11 @@ public class AnalizadorSintacticoDR
     // Imprime la solución (o no)
     public void comprobarFinFichero ()
     {
-        if (show)   System.out.println(sol.toString());
+        Token t = obtenerToken();
+        if (t.tipo != Token.EOF)    errorSintactico(t, "fin de fichero");
+        if (show)
+        {
+            System.out.println(sol.toString());
+        }
     }
 }

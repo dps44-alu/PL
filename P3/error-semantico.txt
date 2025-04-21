@@ -1,0 +1,16 @@
+
+  private final int ERRYADECL=1,ERRNODECL=3,ERRTIPOS=4;
+  private void errorSemantico(int nerror,Token tok)
+  {
+    System.err.print("Error semantico ("+tok.fila+","+tok.columna+"): '"+tok.lexema+"' ");
+    switch (nerror) {
+      case ERRYADECL: System.err.println("ya existe en este ambito");
+         break;
+      case ERRNODECL: System.err.println("no ha sido declarado");
+         break;
+      case ERRTIPOS: System.err.println("tipos incompatibles entero/real");
+         break;
+    }
+    System.exit(-1);
+  }
+

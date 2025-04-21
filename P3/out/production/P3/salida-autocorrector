@@ -1,0 +1,178 @@
+*********************************************************
+Autocorrector plp3 
+ Generando ficheros auxiliares... 
+*********************************************************
+ Compilando...
+*********************************************************
+
+*********************************************************
+ Ejecutando y comprobando salida a la vez...
+*********************************************************
+Prueba: p01
+OK
+--------------------------
+Prueba: p02
+--- Fallo en la traducción ----------
+2,12c2,12
+< var	f_i:integer;
+< 	f_j:integer;
+< 	f__i:real := 7;
+< 	f__i:integer := 7 +i 2;
+< 	j:real;
+< 	f_a:real;
+< 	f_b:integer;
+< 	f__j:integer;
+< 	k:integer;
+< 	f_e:integer;
+< 	f_g:real;
+---
+> var    i:integer;
+>    j:integer;
+>    f_i:real;
+>    f__i:integer;
+>    f_j:real;
+>    f__a:real;
+>    f__b:integer;
+>    f___j:integer;
+>    f_k:integer;
+>    f__e:integer;
+>    f__g:real;
+14c14
+< 
+---
+> if 2.5 +r itor(3) +r itor(4) +r itor(i) +r itor(a) then
+16,17c16
+< if 2.5 +r itor(3) +r itor(4) +r  nullr  +r  nullr  then
+< 
+---
+> f_i := itor(7);
+19c18
+< 
+---
+> f__i := 7 +i 2
+21c20,21
+< 
+---
+> ;
+> f_j := itor(1 +i 2 +i 3) +r 4.0 +r f_i;
+23,25c23
+< 
+< end
+< 
+---
+> f__a := itor(1 +i 2)
+27c25
+< j := itor(1 +i 2 +i 3) +r 4.0 +r  nullr ;
+---
+> ;
+29,33d26
+< a := 1 +i 2
+< end
+< 
+< begin
+< 
+35c28
+< j := 1 +i 2 -i 3
+---
+> f___j := 1 +i 2 -i 3
+38a32
+> ;
+40c34
+< 
+---
+> doNothing;
+41a36,37
+> doNothing
+> end
+--------------------------
+Prueba: p03
+--- Fallo en la traducción ----------
+1,10d0
+< function p03(a:integer;var b:real):real;
+< var	p03_j:integer :=  nulli  +i 7 +i 2 -i 5;
+< begin
+< 
+< begin
+< a :=  nulli  +i 1
+< end
+< b := 123.45 +r 1.233444 -r 12345.6
+< end
+< 
+--------------------------
+Prueba: p04
+--- Fallo en la traducción ----------
+1,14d0
+< function p04:integer;
+< var	p04__a:integer :=  nulli  +i 1;
+< begin
+< 
+< begin
+< 
+< begin
+< 
+< end
+< a :=  nulli  -i  nulli  +i  nulli  +i  nulli  -i  nulli  +i  nulli  +i  nulli  -i  nulli  +i  nulli  -i  nulli 
+< end
+< a := 7
+< end
+< 
+--------------------------
+Prueba: p05
+--- Fallo en la traducción ----------
+1,30d0
+< function p05(a:integer;b:real;var c:integer):real;
+< var	p05__j:integer;
+< 	p05___i:real;
+< 	p05____i:real := 2.3;
+< 	p05___j:real;
+< begin
+< 
+< begin
+< 
+< begin
+< 
+< begin
+< j := 8;i :=  nullr  +r 5.4
+< end
+< if 2 +i 3 -i 4 -i 9 then
+< 
+< begin
+< 
+< begin
+< 
+< end
+< a :=  nulli  +i  nulli 
+< end
+< 
+< end
+< 
+< end
+< 
+< end
+< 
+--------------------------
+Prueba: p06
+--- Fallo en la traducción ----------
+1,14d0
+< function p06:integer;
+< var	a:integer;
+< 	p06_b:integer;
+< 	p06_b:integer :=  nulli  +i 3;
+< begin
+< a := 2;a :=  nulli  +i 2;if 2 then
+< if itor(3 +i null) -r 7.65 then
+< 
+< begin
+< 
+< end
+< a :=  nulli 
+< end
+< 
+--------------------------
+
+OJO: FALLAN 5 PRUEBAS DEL AUTOCORRECTOR
+
+
+
+AVISO IMPORTANTE: este autocorrector NO prueba todos los casos posibles
+

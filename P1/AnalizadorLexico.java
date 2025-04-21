@@ -56,7 +56,8 @@ public class AnalizadorLexico
         catch (EOFException e)
         {
             EOF = true;
-            return 'e';
+            if (palabra_actual.isEmpty())   return 'ç';
+            else                            return ' ';
         }
         catch (IOException e)
         {
@@ -364,9 +365,12 @@ public class AnalizadorLexico
                     System.err.println("Error lexico: fin de fichero inesperado");
                     System.exit(-1);
                 }
-                Token token = new Token();
-                token.tipo = Token.EOF;
-                return token;
+                if (c == 'ç')
+                {
+                    Token token = new Token();
+                    token.tipo = Token.EOF;
+                    return token;
+                }
             }
             if (!comentario) palabra_actual.append(c);
             if (comentario)
@@ -392,11 +396,18 @@ public class AnalizadorLexico
             }
             if (esFinal(nuevo))
             {
+                if (EOF) leerCaracter();
                 estados.clear();
                 return tokenAsociado(nuevo);
             }
             else
             {
+                if (c == 'ç')
+                {
+                    Token token = new Token();
+                    token.tipo = Token.EOF;
+                    return token;
+                }
                 c = leerCaracter();
             }
         } while (true);
