@@ -1,4 +1,3 @@
-
 #ifndef _TablaSimbolos_
 #define _TablaSimbolos_
 

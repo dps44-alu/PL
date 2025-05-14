@@ -1,0 +1,94 @@
+
+// ------------ este cacho debe ir en comun.h -------------------------
+
+const int ERRLEXICO=1,
+          ERRSINT=2,
+          ERREOF=3,
+          ERRLEXEOF=4,
+
+          ERR_YADECL=5,
+          ERR_NODECL=6,
+          ERR_NOCABE=7,
+
+          ERR_IFWHILE=8,
+          ERR_LOOP=9,
+
+          ERR_DIM=10,
+          ERR_FALTAN=11,
+          ERR_SOBRAN=12,
+          ERR_INDICE_ENTERO=13,
+
+          ERR_ASIG=14,
+          ERR_MAXTEMP=15;
+
+
+
+
+void errorSemantico(int nerror,int fila,int columna,const char *s);
+void msgError(int nerror,int nlin,int ncol,const char *s);
+
+
+// ------------ este cacho debe ir en plp5.y -------------------------
+
+void errorSemantico(int nerror,int fila,int columna,const char *s)
+{
+    fprintf(stderr,"Error semantico (%d,%d): ",fila,columna);
+    switch (nerror) {
+        case ERR_YADECL: fprintf(stderr,"variable '%s' ya declarada\n",s);
+               // fila,columna de la variable
+               break;
+        case ERR_NODECL: fprintf(stderr,"variable '%s' no declarada\n",s);
+               // fila,columna de la variable
+               break;
+        case ERR_NOCABE:fprintf(stderr,"la variable '%s' ya no cabe en memoria\n",s);
+               // fila,columna de la variable
+               break;
+
+        case ERR_IFWHILE:fprintf(stderr,"la expresion del '%s' debe ser de tipo entero",s);
+               // fila,columna del 'if' o 'while'
+               break;
+        case ERR_LOOP:fprintf(stderr,"la variable del '%s' debe ser de tipo entero",s);
+               // fila,columna del 'loop'
+               break;
+
+        case ERR_DIM: fprintf(stderr,"la dimension debe ser mayor que 0\n");
+               // fila,columna de la dimension (numint)
+               break;
+        case ERR_FALTAN: fprintf(stderr,"faltan indices\n");
+               // fila,columna del id (si no hay ningún índice) o del último ']'
+               break;
+        case ERR_SOBRAN: fprintf(stderr,"sobran indices\n");
+               // fila,columna del '[' si no es array, o de la ',' que sobra
+               break;
+        case ERR_INDICE_ENTERO: fprintf(stderr,"el indice de un array debe ser de tipo entero\n");
+               // fila,columna del '[' si es el primero, o de la ',' inmediatamente anterior
+               break;
+
+        case ERR_ASIG: fprintf(stderr,"tipos incompatibles en la asignacion\n");
+               // fila,columna del '='
+               break;
+        case ERR_MAXTEMP:fprintf(stderr,"no hay espacio para variables temporales\n");
+               // fila,columna da igual
+               break;
+    }
+    exit(-1);
+}
+
+
+
+
+void msgError(int nerror,int nlin,int ncol,const char *s)
+{
+     switch (nerror) {
+         case ERRLEXICO: fprintf(stderr,"Error lexico (%d,%d): caracter '%s' incorrecto\n",nlin,ncol,s);
+            break;
+         case ERRSINT: fprintf(stderr,"Error sintactico (%d,%d): en '%s'\n",nlin,ncol,s);
+            break;
+         case ERREOF: fprintf(stderr,"Error sintactico: fin de fichero inesperado\n");
+            break;
+         case ERRLEXEOF: fprintf(stderr,"Error lexico: fin de fichero inesperado\n");
+            break;
+     }
+
+     exit(1);
+}
