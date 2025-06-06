@@ -47,8 +47,7 @@ int nuevoTemp(int fila, int col)
 
 void liberaTemp()
 {
-    if (posTemporal > MEM_VAR)
-        posTemporal--;
+    // Temporals are not reused to avoid overwriting active values
 }
 
 size_t dimEsperadas = 0;        // numero de dimensiones esperadas en una referencia
@@ -302,23 +301,29 @@ I       : Blq
                     errorSemantico(ERR_LOOP, $1.nlin, $1.ncol, "loop");
                 }
 
-                string e1 = "L" + to_string(numEtiqueta);
-                numEtiqueta++;
-                string e2 = "L" + to_string(numEtiqueta);
-                numEtiqueta++;
+                int inicio = atoi($5.r1);
+                int fin    = atoi($5.r2);
+
+                string e1 = "L" + to_string(numEtiqueta++);
+                string e2 = "L" + to_string(numEtiqueta++);
 
                 $$.cod = string("mov #") + $5.r1 + " " + to_string(s->dir) + "\n";  // mov Range.r1 id.dir
-                $$.cod += e1 + "\n";                                               // e1:
-                $$.cod += "mov " + to_string(s->dir) + " A\n";                      // mov id.dir A
-                $$.cod += "muli #-1\n";                                             // muli #-1
-                $$.cod += string("addi #") + $5.r2 + "\n";                          // addi Range.r2
-                $$.cod += "jz " + e2 + "\n";                                        // jz e2
-                $$.cod += $6.cod;                                                   // I
-                $$.cod += "mov " + to_string(s->dir) + " A\n";                      // mov id.dir A
-                $$.cod += "addi #1\n";                                              // addi #1
-                $$.cod += "mov A " + to_string(s->dir) + "\n";                      // mov A id.dir
-                $$.cod += "jmp " + e1 + "\n";                                       // jmp e1
-                $$.cod += e2 + "\n";                                               // e2:
+                $$.cod += e1 + "\n";   // e1:
+                $$.cod += "mov " + to_string(s->dir) + " A\n";    // mov id.dir A
+                if (inicio <= fin)
+                    $$.cod += string("leqi #") + $5.r2 + "\n";   // comprobar id <= fin
+                else
+                    $$.cod += string("geqi #") + $5.r2 + "\n";   // comprobar id >= fin
+                $$.cod += "jz " + e2 + "\n";    // jz e2 si condicion falsa
+                $$.cod += $6.cod;    // I
+                $$.cod += "mov " + to_string(s->dir) + " A\n";    // mov id.dir A
+                if (inicio <= fin)
+                    $$.cod += "addi #1\n";    // addi #1
+                else
+                    $$.cod += "subi #1\n";    // subi #1
+                $$.cod += "mov A " + to_string(s->dir) + "\n";    // mov A id.dir
+                $$.cod += "jmp " + e1 + "\n";    // jmp e1
+                $$.cod += e2 + "\n";   // e2:
             }
         | _if E I Ip
             {
@@ -416,7 +421,7 @@ Ip      : _else I fi
                 {
                     cond = string("mov ") + ($2.tipo==ENTERO?"#":"$") + $2.cod + " A\n";
                 }
-
+                
                 $$.cod = cond;
                 $$.cod += "jz " + e1 + "\n";
                 $$.cod += $3.cod;
