@@ -87,7 +87,7 @@ Dim     : numint coma Dim
             }
         ;
 
-Cod     : Cod pyc I
+Cod     : Cod Sep I
             {
                 $$.cod = $1.cod + $3.cod;
             }
@@ -95,6 +95,10 @@ Cod     : Cod pyc I
             {
                 $$.cod = $1.cod;
             }
+        ;
+
+Sep     : pyc
+        | /* empty */
         ;
 
 I       : Blq
