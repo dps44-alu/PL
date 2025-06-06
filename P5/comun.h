@@ -9,12 +9,13 @@ using namespace std;
 //temp: variable temporal donde se ha guardado un Factor o resultado de operacion
 typedef struct
 {
-    char *lexema;
+    char *lexema, *r1, *r2;
     string cod, temp, aux_lexema;
     int nlin, ncol;
     int tipo;
+    int dir;
     int size;
-    int dbase;
+    bool isVar, isOp;
     bool arrays;
 } MITIPO;
 

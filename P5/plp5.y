@@ -33,6 +33,10 @@ const int MEM_VAR   = 16000;
 TablaSimbolos   ts  = new TablaSimbolos(NULL);
 TablaTipos      tt  = TablaTipos();
 
+int posMemoria = 0;
+int numEtiqueta = 1;
+int numbloque = 0;
+
 using namespace std;
 
 %}
@@ -41,15 +45,17 @@ using namespace std;
 
 S       : Fun
             {
+                $$.cod = $1.cod;
                 cout << $$.cod;
             }
         ;
 
 Fun     : fn id pari pard Cod endfn
             {
-
+                $$.cod = $5.cod;
+                $$.cod += "halt\n";    // Fin de programa
             }
-    ;
+        ;
 
 SType   : _int
             {
@@ -63,7 +69,7 @@ SType   : _int
 
 Type    : SType
             {
-
+                $$.tipo = $1.tipo;
             }
         | array SType Dim
             {
@@ -83,41 +89,173 @@ Dim     : numint coma Dim
 
 Cod     : Cod pyc I
             {
-
+                $$.cod = $1.cod + $3.cod;
             }
         | I
             {
-
+                $$.cod = $1.cod;
             }
         ;
 
 I       : Blq
             {
-
+                $$.cod = $1.cod;
             }
         | let Ref asig E
             {
-
+                if ($2.tipo != $4.tipo)
+                {
+                    if ($2.tipo == REAL && $4.tipo == ENTERO)
+                    {
+                        $$.cod = string($2.lexema) + " mov " + to_string($4.dir) + " A\n";   // mov E.dir A
+                        $$.cod += "itor\n";                             // itor
+                        $$.cod += "mov A " + to_string($2.dir) + "\n";  // mov A Ref.dir
+                    }
+                    else if ($2.tipo == ENTERO && $4.tipo == REAL)
+                    {
+                        $$.cod = "mov " + to_string($4.dir) + " A\n";   // mov E.dir A
+                        $$.cod += "rtoi\n";                             // rtoi
+                        $$.cod += "mov A " + to_string($2.dir) + "\n";  // mov A Ref.dir
+                    }
+                }
+                else
+                {
+                    if ($4.isVar)
+                    {
+                        if ($4.isOp)
+                        {
+                            $$.cod = $4.cod;                                                        // E.cod
+                            $$.cod += "mov A " + to_string($2.dir) + "\n";                          // mov E.id id
+                        }
+                        else
+                        {
+                            $$.cod = "mov " + to_string($4.dir) + " " + to_string($2.dir) + "\n";   // mov E.id id
+                        }
+                    }
+                    else
+                    {
+                        if ($4.isOp)
+                        {
+                            $$.cod = $4.cod;                                                        // E.cod
+                            $$.cod = "mov #" + $4.cod + " " + to_string($2.dir) + "\n";             // mov E.num id
+                        }
+                        else
+                        {
+                            $$.cod = "mov #" + $4.cod + " " + to_string($2.dir) + "\n";             // mov E.num id
+                        }
+                    }
+                }
             }
         | var id IT
             {
+                Simbolo newSymb;
+                newSymb.nombre = $2.lexema;
+                newSymb.tipo = $3.tipo;
+                newSymb.dir = posMemoria;
+                newSymb.tam = 1;
 
+                for (int i = 0; i < numbloque; i++)
+                {
+                    newSymb.nombre += "_b" + to_string(i);
+                }
+
+                ts.newSymb(newSymb);
+
+                $$.cod = "mov #0 " + to_string(posMemoria) + "\n";     // mov #0 id
+
+                posMemoria += 1;
             }
         | print E
             {
+                if ($2.isVar)
+                {
+                    $$.cod = "mov " + to_string($2.dir) + " A\n";   // mov E.id A
+                }
+                else
+                {
+                    if ($2.isOp)
+                    {
+                        $$.cod = $2.cod;                        // E.cod
+                    }
+                    else
+                    {
+                        if ($2.tipo == ENTERO)
+                        {
+                            $$.cod = "mov #" + $2.cod + " A\n";   // mov E.id A
+                        }
+                        else if ($2.tipo == REAL)
+                        {
+                            $$.cod = "mov $" + $2.cod + " A\n";   // mov E.id A
+                        }
+                    }
+                }
 
+                if ($2.tipo == ENTERO)
+                {
+                    $$.cod += "wri A\n";                        // wri A
+                }
+                else if ($2.tipo == REAL)
+                {
+                    $$.cod += "wrr A\n";                        // wrr B
+                }
+
+                $$.cod += "wrl\n";                              // wrl
             }
         | _read Ref
             {
 
             }
-        | _while E I
+        | _while
             {
-
+                numbloque++;
             }
-        | loop id range Range I endloop
+             E I
             {
+                numbloque--;
 
+                string e1 = "E" + to_string(numEtiqueta);
+                numEtiqueta++;
+                string e2 = "E" + to_string(numEtiqueta);
+                numEtiqueta++;
+
+                $$.cod = e1 + ":\n";            // e1;
+                $$.cod += $3.cod;               // E.cod
+                $$.cod += "jz " + e2 + "\n";    // jz e2
+                $$.cod += $4.cod;               // I.cod
+                $$.cod += "jmp " + e1 + "\n";   // jmp e1
+                $$.cod += e2 + ":\n";           // e2:
+            }
+        | loop
+            {
+                numbloque++;
+            }
+            id range Range I endloop
+            {
+                numbloque--;
+
+                Simbolo* s = ts.searchSymb($3.lexema);
+                if (s == NULL)
+                {
+                    // Error
+                }
+
+                string e1 = "E" + to_string(numEtiqueta);
+                numEtiqueta++;
+                string e2 = "E" + to_string(numEtiqueta);
+                numEtiqueta++;
+
+                $$.cod = string("mov #") + $5.r1 + " " + to_string(s->dir) + "\n";  // mov Range.r1 id.dir
+                $$.cod += e1 + ":\n";                                               // e1:
+                $$.cod += "mov " + to_string(s->dir) + " A\n";                      // mov id.dir A
+                $$.cod += "muli #-1\n";                                             // muli #-1
+                $$.cod += string("addi #") + $5.r2 + "\n";                          // addi Range.r2
+                $$.cod += "jz " + e2 + "\n";                                        // jz e2
+                $$.cod += $6.cod;                                                   // I
+                $$.cod += "mov " + to_string(s->dir) + " A\n";                      // mov id.dir A
+                $$.cod += "addi #1\n";                                              // addi #1
+                $$.cod += "mov A " + to_string(s->dir) + "\n";                      // mov A id.dir
+                $$.cod += "jmp " + e1 + "\n";                                       // jmp e1
+                $$.cod += e2 + ":\n";                                               // e2:
             }
         | _if E I Ip
             {
@@ -127,21 +265,23 @@ I       : Blq
 
 Range   : numint dosp numint
             {
-
+                $$.r1 = $1.lexema;
+                $$.r2 = $3.lexema;
             }
         | numint
             {
-
+                $$.r1 = "0";
+                $$.r2 = $1.lexema;
             }
         ;
 
 Blq     : blq
             {
-
+                $$.cod = "";
             }
         | blq Cod fblq
             {
-
+                $$.cod = $2.cod;
             }
         ;
 
@@ -161,57 +301,95 @@ Ip      : _else I fi
 
 IT      : dosp Type
             {
-
+                // var id : tipo;
+                $$.tipo = $2.tipo;
             }
         | /* Vacío */
             {
-
+                // var id;  -> ENTERO implícito
+                $$.tipo = ENTERO;
             }
         ;
 
 E       : E opas T
             {
-                int tipoE = $1.tipo;
-                int tipoT = $3.tipo;
-                if (tipoE == ENTERO && tipoT == ENTERO)
+                $$.isOp = true;
+
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO)
                 {
                     $$.tipo = ENTERO;
                 }
-                else if (tipoE == REAL && tipoT == REAL)
+                else if ($1.tipo == REAL && $3.tipo == REAL)
                 {
                     $$.tipo = REAL;
                 }
-                else if (tipoE == ENTERO && tipoT == REAL)
+                else if ($1.tipo == ENTERO && $3.tipo == REAL)
                 {
-                    $$.cod = "mov B A\n";                  // mov B A
-                    $$.cod = "itor\n";                     // itor
-                    $$.cod = "mov A B\n";                  // mov A B
                     $$.tipo = REAL;
                 }
-                else if (tipoE == REAL && tipoT == ENTERO)
+                else if ($1.tipo == REAL && $3.tipo == ENTERO)
                 {
-                    $$.cod = "mov " + $3.cod + " A\n";     // mov T A
-                    $$.cod = "itor\n";                     // itor
-                    $$.cod = "mov A B\n";                  // mov A B
                     $$.tipo = REAL;
                 }
 
-
+                if ($1.isVar)
+                {
+                    $$.cod = "mov " + to_string($1.dir) + " A\n";    // mov E.dir A
+                }
+                else
+                {
+                    $$.cod = "mov #" + $1.cod + " A\n";              // mov E.cod A
+                }
 
                 if (strcmp($2.lexema, "+") == 0)
                 {
                     if ($$.tipo == ENTERO)
                     {
-                        $$.cod = "addi B\n";         // addi B
+                        if ($3.isVar)
+                        {
+                            $$.cod += "addi " + to_string($3.dir) + "\n";   // addi T.dir
+                        }
+                        else
+                        {
+                            $$.cod += "addi #" + $3.cod + "\n";             // addi T.cod
+                        }
                     }
                     else
                     {
-                        $$.cod = "addr B\n";       // addr B
+                       if ($3.isVar)
+                       {
+                           $$.cod += "addr " + to_string($3.dir) + "\n";   // addr T.dir
+                       }
+                       else
+                       {
+                           $$.cod += "addr #" + $3.cod + "\n";             // addr T.cod
+                       }
                     }
                 }
                 else
                 {
-                    $$.cod = "sub " + $3.cod;
+                    if ($$.tipo == ENTERO)
+                    {
+                        if ($3.isVar)
+                        {
+                            $$.cod += "subi " + to_string($3.dir) + "\n";   // subi T.dir
+                        }
+                        else
+                        {
+                            $$.cod += "subi #" + $3.cod + "\n";             // subi T.dir
+                        }
+                    }
+                    else
+                    {
+                        if ($3.isVar)
+                        {
+                            $$.cod += "subr " + to_string($3.dir) + "\n";   // subr T.dir
+                        }
+                        else
+                        {
+                            $$.cod += "subr #" + $3.cod + "\n";             // subr T.dir
+                        }
+                    }
                 }
             }
         | opas T
@@ -220,51 +398,151 @@ E       : E opas T
             }
         | T
             {
-
+                $$.isOp = $1.isOp;
+                $$.tipo = $1.tipo;
+                $$.dir = $1.dir;
+                $$.isVar = $1.isVar;
+                $$.cod = $1.cod;
             }
         ;
 
 T       : T opmd F
             {
+                $$.isOp = true;
+                $1.isVar = false;
 
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO)
+                {
+                    $$.tipo = ENTERO;
+                }
+                else if ($1.tipo == REAL && $3.tipo == REAL)
+                {
+                    $$.tipo = REAL;
+                }
+                else if ($1.tipo == ENTERO && $3.tipo == REAL)
+                {
+                    $$.tipo = REAL;
+                }
+                else if ($1.tipo == REAL && $3.tipo == ENTERO)
+                {
+                    $$.tipo = REAL;
+                }
+
+                if ($1.isVar)
+                {
+                    $$.cod = "mov " + to_string($1.dir) + " A\n";    // mov E.dir A
+                }
+                else
+                {
+                    $$.cod = "mov #" + $1.cod + " A\n";              // mov E.cod A
+                }
+
+                if (strcmp($2.lexema, "*") == 0)
+                {
+                    if ($$.tipo == ENTERO)
+                    {
+                        if ($3.isVar)
+                        {
+                            $$.cod += "muli " + to_string($3.dir) + "\n";   // muli T.dir
+                        }
+                        else
+                        {
+                            $$.cod += "muli #" + $3.cod + "\n";             // muli T.cod
+                        }
+                    }
+                    else
+                    {
+                        if ($3.isVar)
+                        {
+                            $$.cod += "mulr " + to_string($3.dir) + "\n";   // mulr T.dir
+                        }
+                        else
+                        {
+                            $$.cod += "mulr #" + $3.cod + "\n";             // mulr T.cod
+                        }
+                    }
+                }
+                else
+                {
+                    if ($$.tipo == ENTERO)
+                    {
+                        if ($3.isVar)
+                        {
+                            $$.cod += "subi " + to_string($3.dir) + "\n";   // divi T.dir
+                        }
+                        else
+                        {
+                            $$.cod += "subi #" + $3.cod + "\n";             // divi T.cod
+                        }
+                    }
+                    else
+                    {
+                        if ($3.isVar)
+                        {
+                            $$.cod += "divr " + to_string($3.dir) + "\n";   // divr T.dir
+                        }
+                        else
+                        {
+                            $$.cod += "divr #" + $3.cod + "\n";             // divr T.cod
+                        }
+                    }
+                }
             }
         | F
             {
-
+                $$.tipo = $1.tipo;
+                $$.dir = $1.dir;
+                $$.isVar = $1.isVar;
+                $$.cod = $1.cod;
             }
         ;
 
 F       : numint
             {
-
+                $$.tipo = ENTERO;
+                $$.cod = $1.lexema;
             }
         | numreal
             {
-
+                $$.tipo = REAL;
+                $$.cod = $1.lexema;
             }
         | pari E pard
             {
-
+                $$.cod = $2.cod;  // E.cod
             }
         | Ref
             {
-
+                $$.tipo = $1.tipo;
+                $$.dir = $1.dir;
+                $$.isVar = $1.isVar;
+                $$.cod = $1.cod;
             }
         ;
 
 Ref     : id
             {
-                Simbolo* s = ts.searchSymb($1.lexema);
+                Simbolo* s = NULL;
 
-                if (s == NULL)
+                // Buscar desde el nivel actual hacia arriba
+                for (int nivel = numbloque; nivel >= 0 && s == NULL; nivel--) {
+                    string nombreConPrefijo = $1.lexema;
+                    for (int i = 0; i < nivel; i++) {
+                        nombreConPrefijo += "_b" + to_string(i);
+                    }
+                    s = ts.searchSymb(nombreConPrefijo);
+                }
+
+                if (s != NULL)
                 {
-                    Simbolo newSymb;
-                    newSymb.nombre = $1.lexema;
-                    newSymb.tipo = idTipo;
-                    newSymb.dir = 0;
-                    newSymb.tam = 0;
-
-                    ts.newSymb(newSymb);
+                    $$.tipo = s->tipo;
+                    $$.dir = s->dir;
+                    $$.isVar = true;
+                    $$.cod = s->dir;
+                }
+                else
+                {
+                    errorSemantico(ERR_NODECL, $1.nlin, $1.ncol, $1.lexema);
                 }
             }
         | id cori LExpr cord
@@ -287,7 +565,28 @@ LExpr   : LExpr coma E
 
 int main (int argc, char *argv[])
 {
-    return 0;
+    FILE *fent;
+
+        if (argc == 2)
+        {
+            fent = fopen(argv[1], "rt");
+            if (fent)
+            {
+                yyin = fent;
+                yyparse();
+                fclose(fent);
+            }
+            else
+            {
+                fprintf(stderr, "No puedo abrir el fichero\n");
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Uso: plp5 <nombre de fichero>\n");
+        }
+
+        return 0;
 }
 
 void yyerror (char *s)

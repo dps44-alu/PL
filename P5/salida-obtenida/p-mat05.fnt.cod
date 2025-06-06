@@ -1,0 +1,11 @@
+mov #0 0
+mov #0 1
+mov #addi B
+ 1
+mov 1 0
+mov 1 0
+mov 1 0
+mov 1 0
+mov 0 A
+wri A
+wrl

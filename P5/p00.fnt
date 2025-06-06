@@ -1,0 +1,34 @@
+fn main()
+
+ var a : real;
+ var b : int;
+ let b = 7;
+ let a = b;
+
+ print a;
+
+  var c;
+  let c = b;
+  print c;
+
+  var i;
+  loop i range 9
+    print i
+  endloop;
+
+  print 77.77;
+   var suma;
+   let suma = 0;
+   let i = 0;
+   while 10-i
+    blq
+      print i;
+      let i = i + 1;
+      var a;
+      let a = suma + i;
+      let suma = a
+    fblq;
+
+    print suma/(2+4-1)
+
+endfn

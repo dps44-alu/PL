@@ -1,0 +1,14 @@
+mov #0 0
+mov #0 1
+mov #0 2
+mov #0 1
+mov #0 2
+mov #0 3
+mov #0.0 3
+mov #0 2
+mov 3 A
+wrr A
+wrl
+mov 1 A
+wri A
+wrl

@@ -1,0 +1,131 @@
+; Código m2r generado para el programa fuente
+; Declaraciones de variables
+mov #0 0    ; Variable a (real) en dirección 0
+mov #0 1    ; Variable b (entero) en dirección 1
+mov #7 1    ; Asignación b = 7
+mov 1 A     ; Cargar b en A para la asignación a = b
+itor        ; Convertir entero a real ya que a es real
+mov A 0     ; Asignar el valor convertido a a
+mov 0 A     ; Cargar a para imprimirlo
+wrr A       ; Imprimir el valor real de a
+wrl         ; Imprimir salto de línea
+
+mov #0 2    ; Variable c (entero implícito) en dirección 2
+mov 1 2     ; Asignación c = b
+mov 2 A     ; Cargar c para imprimirlo
+wri A       ; Imprimir el valor entero de c
+wrl         ; Imprimir salto de línea
+
+mov #0 3    ; Variable i (entero implícito) en dirección 3
+; Loop i range 9 (equivale a loop i range 0:9)
+mov #0 3    ; Inicialización i = 0
+L1:         ; Etiqueta inicio del bucle
+mov 3 A     ; Cargar i para comparación
+muli #-1    ; Multiplicar por -1
+addi #9     ; Sumar 9 (equivale a comprobar si 9-i > 0)
+jz L2       ; Si i >= 9, salir del bucle
+mov 3 A     ; Cargar i para imprimirlo
+wri A       ; Imprimir el valor entero de i
+wrl         ; Imprimir salto de línea
+mov 3 A     ; Cargar i para incremento
+addi #1     ; Incrementar i
+mov A 3     ; Guardar nuevo valor de i
+jmp L1      ; Volver al inicio del bucle
+L2:         ; Etiqueta fin del bucle
+
+; Print 77.77
+mov $77.77 A ; Cargar constante real 77.77
+wrr A        ; Imprimir el valor real
+wrl          ; Imprimir salto de línea
+
+mov #0 4     ; Variable suma (entero implícito) en dirección 4
+mov #0 4     ; Asignación suma = 0
+mov #0 3     ; Asignación i = 0
+riable a local en direcci
+; Bucle while 10-i
+L3:          ; Etiqueta inicio del bucle while
+mov #10 A    ; Cargar 10
+subi 3       ; Restar i (A = 10-i)
+jz L4        ; Si 10-i = 0, salir del bucle
+
+; Bloque dentro del while
+mov 3 A      ; Cargar i para imprimirlo
+wri A        ; Imprimir el valor entero de i
+wrl          ; Imprimir salto de línea
+
+mov 3 A      ; Cargar i para incremento
+addi #1      ; Incrementar i
+mov A 3      ; Guardar nuevo valor de i
+
+mov #0 5     ; Variable a local en dirección 5
+mov 4 A      ; Cargar suma
+addi 3       ; Sumar i (A = suma + i)
+mov A 5      ; Guardar en a local
+mov 5 4      ; Asignación suma = a
+
+jmp L3       ; Volver al inicio del bucle while
+L4:          ; Etiqueta fin del bucle while
+
+; Print suma/(2+4-1)
+mov #2 A     ; Cargar 2
+addi #4      ; Sumar 4 (A = 2+4)
+subi #1      ; Restar 1 (A = 2+4-1)
+mov A 16000  ; Guardar en temporal
+mov 4 A      ; Cargar suma
+itor         ; Convertir a real (para división real)
+mov 16000 B  ; Mover denominador a B
+itor         ; Convertir a real
+mov B 16001  ; Guardar denominador como real
+divr 16001   ; Dividir (A = suma/(2+4-1))
+wrr A        ; Imprimir el resultado real
+wrl          ; Imprimir salto de línea
+
+; If-elif-else
+mov 4 A      ; Cargar suma
+subi #55     ; Restar 55 (A = suma-55)
+jz L5        ; Si suma-55 = 0, saltar a elif
+jnz L6       ; Si suma-55 != 0, ir a bloque if
+
+L6:          ; Bloque if (suma-55 != 0)
+mov 4 A      ; Cargar suma
+itor         ; Convertir a real
+mulr $10.0   ; Multiplicar por 10.0
+wrr A        ; Imprimir el resultado
+wrl          ; Imprimir salto de línea
+jmp L7       ; Saltar al final del if-elif-else
+
+L5:          ; Bloque elif
+mov 4 A      ; Cargar suma
+subi #54     ; Restar 54 (A = suma-54)
+jz L8        ; Si suma-54 = 0, saltar a else
+jnz L9       ; Si suma-54 != 0, ir a bloque elif
+
+L9:          ; Bloque elif (suma-54 != 0)
+mov 4 A      ; Cargar suma
+itor         ; Convertir a real
+mulr $1000.0 ; Multiplicar por 1000.0
+wrr A        ; Imprimir el resultado
+wrl          ; Imprimir salto de línea
+jmp L7       ; Saltar al final del if-elif-else
+
+L8:          ; Bloque else
+mov 4 A      ; Cargar suma
+itor         ; Convertir a real
+mulr $100.0  ; Multiplicar por 100.0
+wrr A        ; Imprimir el resultado
+wrl          ; Imprimir salto de línea
+
+L7:          ; Fin del if-elif-else
+
+; If suma let b = 787 fi
+mov 4 A      ; Cargar suma
+jz L10       ; Si suma = 0, saltar fuera del if
+mov #787 1   ; Asignación b = 787
+L10:         ; Fin del if
+
+; Print b
+mov 1 A      ; Cargar b
+wri A        ; Imprimir el valor entero de b
+wrl          ; Imprimir salto de línea
+
+halt         ; Terminar el programa
