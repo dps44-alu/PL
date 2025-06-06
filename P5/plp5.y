@@ -56,11 +56,6 @@ size_t dimActual = 0;           // contador de indices leidos
 bool suprimirNodecl = false;    // para ignorar ERR_NODECL en indices sobrantes
 Simbolo* simboloActual = NULL;   // simbolo de la referencia de array actual
 
-size_t dimEsperadas = 0;        // numero de dimensiones esperadas en una referencia
-size_t dimActual = 0;           // contador de indices leidos
-bool suprimirNodecl = false;    // para ignorar ERR_NODECL en indices sobrantes
-Simbolo* simboloActual = NULL;   // simbolo de la referencia de array actual
-
 using namespace std;
 
 %}
@@ -141,57 +136,50 @@ I       : Blq
             }
         | let Ref asig E
             {
+                auto cargaExpr = [&]() -> string {
+                    if ($4.isOp)
+                        return $4.cod;
+                    else if ($4.isVar)
+                    {
+                        if ($4.isAddr)
+                            return string("mov ") + to_string($4.dir) + " A\nmov @A A\n";
+                        else
+                            return string("mov ") + to_string($4.dir) + " A\n";
+                    }
+                    else
+                        return string("mov ") + ($4.tipo==ENTERO?"#":"$") + $4.cod + " A\n";
+                };
+
+                string cod = cargaExpr();
+
                 if ($2.tipo != $4.tipo)
                 {
                     if ($2.tipo == REAL && $4.tipo == ENTERO)
                     {
-                        if ($4.isOp)
-                        {
-                            $$.cod = $4.cod;                        // E.cod
-                        }
-                        else if ($4.isVar)
-                        {
-                            $$.cod = string("mov ") + to_string($4.dir) + " A\n";
-                        }
-                        else
-                        {
-                            $$.cod = string("mov #") + $4.cod + " A\n";
-                        }
-                        $$.cod += "itor\n";                         // convertir
-                        $$.cod += "mov A " + to_string($2.dir) + "\n";  // guardar
+                        cod += "itor\n";
                     }
                     else if ($2.tipo == ENTERO && $4.tipo == REAL)
                     {
                         errorSemantico(ERR_ASIG, $3.nlin, $3.ncol, "=");
                     }
                 }
+
+                if ($2.isAddr)
+                {
+                    cod += "mov A B\n";
+                    cod += "mov " + to_string($2.dir) + " A\n";
+                    cod += "mov B @A\n";
+                    liberaTemp();
+                }
                 else
                 {
-                    if ($4.isVar)
-                    {
-                        if ($4.isOp)
-                        {
-                            $$.cod = $4.cod;                        // E.cod
-                            $$.cod += "mov A " + to_string($2.dir) + "\n";
-                        }
-                        else
-                        {
-                            $$.cod = "mov " + to_string($4.dir) + " " + to_string($2.dir) + "\n";
-                        }
-                    }
-                    else
-                    {
-                        if ($4.isOp)
-                        {
-                            $$.cod = $4.cod;                        // E.cod
-                            $$.cod += "mov A " + to_string($2.dir) + "\n";
-                        }
-                        else
-                        {
-                            $$.cod = string("mov ") + ($4.tipo==ENTERO?"#":"$") + $4.cod + " " + to_string($2.dir) + "\n";
-                        }
-                    }
+                    cod += "mov A " + to_string($2.dir) + "\n";
                 }
+
+                if ($4.isVar && $4.isAddr)
+                    liberaTemp();
+
+                $$.cod = cod;
             }
         | var id IT
             {
@@ -422,10 +410,6 @@ Ip      : _else I fi
             {
                 $$.cod = "";
             }
-        | /* empty */
-            {
-
-            }
         ;
 
 IT      : dosp Type
@@ -460,7 +444,15 @@ E       : E opas T
                 if ($1.isOp)
                     codigo = $1.cod;
                 else if ($1.isVar)
-                    codigo = "mov " + to_string($1.dir) + " A\n";
+                {
+                    codigo = $1.cod;
+                    codigo += "mov " + to_string($1.dir) + " A\n";
+                    if ($1.isAddr)
+                    {
+                        codigo += "mov @A A\n";
+                        liberaTemp();
+                    }
+                }
                 else
                     codigo = string("mov ") + ($1.tipo==ENTERO?"#":"$") + $1.cod + " A\n";
 
@@ -478,7 +470,21 @@ E       : E opas T
                 {
                     string op = strcmp($2.lexema, "+")==0 ? ( $$.tipo==ENTERO?"addi ":"addr ")
                                                          : ( $$.tipo==ENTERO?"subi ":"subr ");
-                    codigo += op + to_string($3.dir) + "\n";
+                    if ($3.isAddr)
+                    {
+                        int t2 = nuevoTemp($2.nlin, $2.ncol);
+                        codigo += $3.cod;
+                        codigo += "mov " + to_string($3.dir) + " A\n";
+                        codigo += "mov @A A\n";
+                        codigo += "mov A " + to_string(t2) + "\n";
+                        codigo += op + to_string(t2) + "\n";
+                        liberaTemp();
+                        liberaTemp();
+                    }
+                    else
+                    {
+                        codigo += op + to_string($3.dir) + "\n";
+                    }
                 }
                 else
                 {
@@ -498,7 +504,15 @@ E       : E opas T
                 if ($2.isOp)
                     codigo = $2.cod;
                 else if ($2.isVar)
-                    codigo = "mov " + to_string($2.dir) + " A\n";
+                {
+                    codigo = $2.cod;
+                    codigo += "mov " + to_string($2.dir) + " A\n";
+                    if ($2.isAddr)
+                    {
+                        codigo += "mov @A A\n";
+                        liberaTemp();
+                    }
+                }
                 else
                     codigo = string("mov ") + ($2.tipo==ENTERO?"#":"$") + $2.cod + " A\n";
 
@@ -533,7 +547,12 @@ T       : T opmd F
                 if ($1.isOp)
                     codigo = $1.cod;
                 else if ($1.isVar)
-                    codigo = "mov " + to_string($1.dir) + " A\n";
+                {
+                    codigo = $1.cod;
+                    codigo += "mov " + to_string($1.dir) + " A\n";
+                    if ($1.isAddr)
+                        codigo += "mov @A A\n";
+                }
                 else
                     codigo = string("mov ") + ($1.tipo==ENTERO?"#":"$") + $1.cod + " A\n";
 
@@ -551,7 +570,20 @@ T       : T opmd F
                 {
                     string op = strcmp($2.lexema, "*")==0 ? ( $$.tipo==ENTERO?"muli ":"mulr ")
                                                          : ( $$.tipo==ENTERO?"divi ":"divr ");
-                    codigo += op + to_string($3.dir) + "\n";
+                    if ($3.isAddr)
+                    {
+                        int t2 = nuevoTemp($2.nlin, $2.ncol);
+                        codigo += $3.cod;
+                        codigo += "mov " + to_string($3.dir) + " A\n";
+                        codigo += "mov @A A\n";
+                        codigo += "mov A " + to_string(t2) + "\n";
+                        codigo += op + to_string(t2) + "\n";
+                        liberaTemp();
+                    }
+                    else
+                    {
+                        codigo += op + to_string($3.dir) + "\n";
+                    }
                 }
                 else
                 {
@@ -577,6 +609,7 @@ F       : numint
                 $$.cod = $1.lexema;
                 $$.isVar = false;
                 $$.isOp = false;
+                $$.isAddr = false;
             }
         | numreal
             {
@@ -584,6 +617,7 @@ F       : numint
                 $$.cod = $1.lexema;
                 $$.isVar = false;
                 $$.isOp = false;
+                $$.isAddr = false;
             }
         | pari E pard
             {
@@ -591,6 +625,7 @@ F       : numint
                 $$.cod = $2.cod;  // E.cod
                 $$.isVar = false;
                 $$.isOp = true;
+                $$.isAddr = false;
             }
         | Ref
             {
@@ -599,6 +634,7 @@ F       : numint
                 $$.isVar = $1.isVar;
                 $$.cod = $1.cod;
                 $$.isOp = false;
+                $$.isAddr = $1.isAddr;
             }
         ;
 
@@ -613,6 +649,7 @@ Ref     : id
                     $$.isVar = true;
                     $$.cod = to_string(s->dir);
                     $$.dims = s->dims;
+                    $$.isAddr = false;
                 }
                 else
                 {
@@ -621,6 +658,7 @@ Ref     : id
                     $$.tipo = ENTERO;
                     $$.dir = 0;
                     $$.isVar = false;
+                    $$.isAddr = false;
                 }
             }
         | id {
@@ -672,6 +710,7 @@ Ref     : id
                 $$.cod += string("mov #") + to_string(s->dir) + " A\n";
                 $$.cod += "addr " + to_string($4.dir) + "\n";
                 $$.cod += "mov A " + to_string($4.dir) + "\n";
+                $$.isAddr = true;
             }
         ;
 
