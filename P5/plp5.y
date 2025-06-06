@@ -71,36 +71,34 @@ SType   : _int
 Type    : SType
             {
                 $$.tipo = $1.tipo;
+                $$.size = 1;
+                $$.arrays = false;
             }
         | array SType Dim
             {
-
+                $$.tipo = $2.tipo;
+                $$.size = $3.size;
+                $$.arrays = true;
             }
         ;
 
 Dim     : numint coma Dim
             {
-
+                $$.size = atoi($1.lexema) * $3.size;
             }
         | numint
             {
-
+                $$.size = atoi($1.lexema);
             }
         ;
 
-Cod     : I ListaI
-            {
-                $$.cod = $1.cod + $2.cod;
-            }
-        ;
-
-ListaI  : Sep I ListaI
-            {
-                $$.cod = $2.cod + $3.cod;
-            }
-        | /* empty */
+Cod     : /* empty */
             {
                 $$.cod = "";
+            }
+        | I Sep Cod
+            {
+                $$.cod = $1.cod + $3.cod;
             }
         ;
 
@@ -163,18 +161,29 @@ I       : Blq
                 newSymb.nombre = $2.lexema;
                 newSymb.tipo = $3.tipo;
                 newSymb.dir = posMemoria;
-                newSymb.tam = 1;
+                newSymb.tam = $3.size;
 
                 for (int i = 0; i < numbloque; i++)
                 {
                     newSymb.nombre += "_b" + to_string(i);
                 }
 
-                ts->newSymb(newSymb);
+                if (!ts->newSymb(newSymb))
+                {
+                    errorSemantico(ERR_YADECL, $2.nlin, $2.ncol, $2.lexema);
+                }
 
-                $$.cod = "mov #0 " + to_string(posMemoria) + "\n";     // mov #0 id
+                if (posMemoria + newSymb.tam > MEM_VAR)
+                {
+                    errorSemantico(ERR_NOCABE, $2.nlin, $2.ncol, $2.lexema);
+                }
+                $$.cod = "";
+                for (int i = 0; i < newSymb.tam; i++)
+                {
+                    $$.cod += "mov #0 " + to_string(posMemoria + i) + "\n";
+                }
 
-                posMemoria += 1;
+                posMemoria += newSymb.tam;
             }
         | print E
             {
@@ -292,23 +301,13 @@ Blq     : blq
                 ts = new TablaSimbolos(ts);
                 numbloque++;
             }
-          OptCod fblq
+          Cod fblq
             {
                 posMemoria = pilaMem.back();
                 pilaMem.pop_back();
                 ts = ts->getPadre();
                 numbloque--;
-                $$.cod = $3.cod;
-            }
-        ;
-
-OptCod  : Cod
-            {
-                $$.cod = $1.cod;
-            }
-        | /* empty */
-            {
-                $$.cod = "";
+                $$.cod = $2.cod;
             }
         ;
 
@@ -330,11 +329,15 @@ IT      : dosp Type
             {
                 // var id : tipo;
                 $$.tipo = $2.tipo;
+                $$.size = $2.size;
+                $$.arrays = $2.arrays;
             }
         | /* Vacío */
             {
                 // var id;  -> ENTERO implícito
                 $$.tipo = ENTERO;
+                $$.size = 1;
+                $$.arrays = false;
             }
         ;
 
