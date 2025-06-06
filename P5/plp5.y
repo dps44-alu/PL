@@ -56,6 +56,11 @@ size_t dimActual = 0;           // contador de indices leidos
 bool suprimirNodecl = false;    // para ignorar ERR_NODECL en indices sobrantes
 Simbolo* simboloActual = NULL;   // simbolo de la referencia de array actual
 
+size_t dimEsperadas = 0;        // numero de dimensiones esperadas en una referencia
+size_t dimActual = 0;           // contador de indices leidos
+bool suprimirNodecl = false;    // para ignorar ERR_NODECL en indices sobrantes
+Simbolo* simboloActual = NULL;   // simbolo de la referencia de array actual
+
 using namespace std;
 
 %}
@@ -416,6 +421,10 @@ Ip      : _else I fi
         | /* empty */
             {
                 $$.cod = "";
+            }
+        | /* empty */
+            {
+
             }
         ;
 
