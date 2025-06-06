@@ -37,6 +37,16 @@ int posMemoria = 0;
 int numEtiqueta = 1;
 int numbloque = 0;
 vector<int> pilaMem;
+int ctemp = MEM_VAR;
+
+int nuevaTemp()
+{
+    if (ctemp > MEM_TOTAL - 1)
+    {
+        errorSemantico(ERR_MAXTEMP, nlin, ncol, "");
+    }
+    return ctemp++;
+}
 
 using namespace std;
 
@@ -73,22 +83,36 @@ Type    : SType
                 $$.tipo = $1.tipo;
                 $$.size = 1;
                 $$.arrays = false;
+                $$.dims.clear();
             }
         | array SType Dim
             {
                 $$.tipo = $2.tipo;
                 $$.size = $3.size;
                 $$.arrays = true;
+                $$.dims = $3.dims;
             }
         ;
 
 Dim     : numint coma Dim
             {
-                $$.size = atoi($1.lexema) * $3.size;
+                int val = atoi($1.lexema);
+                if (val <= 0) {
+                    errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
+                }
+                $$.size = val * $3.size;
+                $$.dims.push_back(val);
+                $$.dims.insert($$.dims.end(), $3.dims.begin(), $3.dims.end());
             }
         | numint
             {
-                $$.size = atoi($1.lexema);
+                int val = atoi($1.lexema);
+                if (val <= 0) {
+                    errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
+                }
+                $$.size = val;
+                $$.dims.clear();
+                $$.dims.push_back(val);
             }
         ;
         
@@ -162,6 +186,8 @@ I       : Blq
                 newSymb.tipo = $3.tipo;
                 newSymb.dir = posMemoria;
                 newSymb.tam = $3.size;
+                newSymb.dims = $3.dims;
+                newSymb.isArray = $3.arrays;
 
                 for (int i = 0; i < numbloque; i++)
                 {
@@ -223,7 +249,15 @@ I       : Blq
             }
         | _read Ref
             {
-
+                $$.cod = $2.cod;
+                if ($2.tipo == ENTERO)
+                {
+                    $$.cod += "rdi " + to_string($2.dir) + "\n";
+                }
+                else
+                {
+                    $$.cod += "rdr " + to_string($2.dir) + "\n";
+                }
             }
         | _while
             {
@@ -279,7 +313,23 @@ I       : Blq
             }
         | _if E I Ip
             {
-
+                if ($2.tipo != ENTERO)
+                {
+                    errorSemantico(ERR_IFWHILE, $1.nlin, $1.ncol, "if");
+                }
+                string e1 = "E" + to_string(numEtiqueta++);
+                string e2 = "E" + to_string(numEtiqueta++);
+                $$.cod = $2.cod;
+                if ($2.isVar)
+                    $$.cod += "mov " + to_string($2.dir) + " A\n";
+                else if (!$2.isOp)
+                    $$.cod += "mov #" + $2.cod + " A\n";
+                $$.cod += "jz " + e1 + "\n";
+                $$.cod += $3.cod;
+                $$.cod += "jmp " + e2 + "\n";
+                $$.cod += e1 + ":\n";
+                $$.cod += $4.cod;
+                $$.cod += e2 + ":\n";
             }
         ;
 
@@ -313,15 +363,31 @@ Blq     : blq
 
 Ip      : _else I fi
             {
-
+                $$.cod = $2.cod;
             }
         | elif E I Ip
             {
-
+                if ($2.tipo != ENTERO)
+                {
+                    errorSemantico(ERR_IFWHILE, $2.nlin, $2.ncol, "if");
+                }
+                string e1 = "E" + to_string(numEtiqueta++);
+                string e2 = "E" + to_string(numEtiqueta++);
+                $$.cod = $2.cod;
+                if ($2.isVar)
+                    $$.cod += "mov " + to_string($2.dir) + " A\n";
+                else if (!$2.isOp)
+                    $$.cod += "mov #" + $2.cod + " A\n";
+                $$.cod += "jz " + e1 + "\n";
+                $$.cod += $3.cod;
+                $$.cod += "jmp " + e2 + "\n";
+                $$.cod += e1 + ":\n";
+                $$.cod += $4.cod;
+                $$.cod += e2 + ":\n";
             }
         | fi
             {
-
+                $$.cod = "";
             }
         ;
 
@@ -331,6 +397,7 @@ IT      : dosp Type
                 $$.tipo = $2.tipo;
                 $$.size = $2.size;
                 $$.arrays = $2.arrays;
+                $$.dims = $2.dims;
             }
         | /* Vacío */
             {
@@ -338,6 +405,7 @@ IT      : dosp Type
                 $$.tipo = ENTERO;
                 $$.size = 1;
                 $$.arrays = false;
+                $$.dims.clear();
             }
         ;
 
@@ -567,8 +635,12 @@ Ref     : id
                 {
                     $$.tipo = s->tipo;
                     $$.dir = s->dir;
+                    if (s->isArray)
+                    {
+                        errorSemantico(ERR_FALTAN, $1.nlin, $1.ncol, $1.lexema);
+                    }
                     $$.isVar = true;
-                    $$.cod = s->dir;
+                    $$.cod = to_string(s->dir);
                 }
                 else
                 {
@@ -577,17 +649,78 @@ Ref     : id
             }
         | id cori LExpr cord
             {
+                Simbolo* s = NULL;
+                for (int nivel = numbloque; nivel >= 0 && s == NULL; nivel--) {
+                    string nombreConPrefijo = $1.lexema;
+                    for (int i = 0; i < nivel; i++) {
+                        nombreConPrefijo += "_b" + to_string(i);
+                    }
+                    s = ts->searchSymb(nombreConPrefijo);
+                }
+                if (s == NULL)
+                {
+                    errorSemantico(ERR_NODECL, $1.nlin, $1.ncol, $1.lexema);
+                }
+                if (!s->isArray)
+                {
+                    errorSemantico(ERR_SOBRAN, $2.nlin, $2.ncol, $1.lexema);
+                }
+                if ($3.lista->size() < s->dims.size())
+                {
+                    errorSemantico(ERR_FALTAN, $2.nlin, $2.ncol, $1.lexema);
+                }
+                if ($3.lista->size() > s->dims.size())
+                {
+                    errorSemantico(ERR_SOBRAN, $2.nlin, $2.ncol, $1.lexema);
+                }
 
+                int tempOff = nuevaTemp();
+                int tempVal = nuevaTemp();
+                $$.cod = "mov #0 " + to_string(tempOff) + "\n";
+                size_t n = $3.lista->size();
+                for (size_t i = 0; i < n; i++)
+                {
+                    MITIPO idx = (*$3.lista)[i];
+                    $$.cod += idx.cod;
+                    if (idx.isVar)
+                    {
+                        $$.cod += "mov " + to_string(idx.dir) + " A\n";
+                    }
+                    else if (!idx.isOp)
+                    {
+                        $$.cod += "mov #" + idx.cod + " A\n";
+                    }
+
+                    int stride = 1;
+                    for (size_t k = i + 1; k < s->dims.size(); k++)
+                        stride *= s->dims[k];
+                    if (stride > 1)
+                        $$.cod += "muli #" + to_string(stride) + "\n";
+
+                    $$.cod += "mov A " + to_string(tempVal) + "\n";
+                    $$.cod += "mov " + to_string(tempOff) + " A\n";
+                    $$.cod += "addi " + to_string(tempVal) + "\n";
+                    $$.cod += "mov A " + to_string(tempOff) + "\n";
+                }
+
+                $$.cod += "mov #" + to_string(s->dir) + " A\n";
+                $$.cod += "addi " + to_string(tempOff) + "\n";
+                $$.dir = nuevaTemp();
+                $$.isVar = true;
+                $$.tipo = s->tipo;
+                $$.cod += "mov A " + to_string($$.dir) + "\n";
             }
         ;
 
 LExpr   : LExpr coma E
             {
-
+                $$.lista = $1.lista;
+                $$.lista->push_back($3);
             }
         | E
             {
-
+                $$.lista = new vector<MITIPO>();
+                $$.lista->push_back($1);
             }
         ;
 
