@@ -30,7 +30,7 @@ void yyerror(char *s);
 const int MEM_TOTAL = 16384;
 const int MEM_VAR   = 16000;
 
-TablaSimbolos   ts  = new TablaSimbolos(NULL);
+TablaSimbolos*  ts  = new TablaSimbolos(NULL);
 TablaTipos      tt  = TablaTipos();
 
 int posMemoria = 0;
@@ -70,20 +70,28 @@ SType   : _int
 Type    : SType
             {
                 $$.tipo = $1.tipo;
+                $$.size = 1;
+                $$.arrays = false;
             }
         | array SType Dim
             {
-
+                $$.tipo = $2.tipo;
+                $$.size = $3.size;
+                $$.arrays = true;
             }
         ;
 
 Dim     : numint coma Dim
             {
-
+                if (atoi($1.lexema) <= 0)
+                    errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
+                $$.size = atoi($1.lexema) * $3.size;
             }
         | numint
             {
-
+                if (atoi($1.lexema) <= 0)
+                    errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
+                $$.size = atoi($1.lexema);
             }
         ;
 
@@ -152,18 +160,22 @@ I       : Blq
                 newSymb.nombre = $2.lexema;
                 newSymb.tipo = $3.tipo;
                 newSymb.dir = posMemoria;
-                newSymb.tam = 1;
+                newSymb.tam = ($3.arrays ? $3.size : 1);
 
-                for (int i = 0; i < numbloque; i++)
+
+                if (!ts->newSymb(newSymb))
                 {
-                    newSymb.nombre += "_b" + to_string(i);
+                    errorSemantico(ERR_YADECL, $2.nlin, $2.ncol, $2.lexema);
                 }
 
-                ts.newSymb(newSymb);
+                if (posMemoria + newSymb.tam > MEM_VAR)
+                {
+                    errorSemantico(ERR_NOCABE, $2.nlin, $2.ncol, $2.lexema);
+                }
 
                 $$.cod = "mov #0 " + to_string(posMemoria) + "\n";     // mov #0 id
 
-                posMemoria += 1;
+                posMemoria += newSymb.tam;
             }
         | print E
             {
@@ -233,7 +245,7 @@ I       : Blq
             {
                 numbloque--;
 
-                Simbolo* s = ts.searchSymb($3.lexema);
+                Simbolo* s = ts->searchSymb($3.lexema);
                 if (s == NULL)
                 {
                     // Error
@@ -259,7 +271,10 @@ I       : Blq
             }
         | _if E I Ip
             {
-
+                if ($2.tipo != ENTERO)
+                {
+                    errorSemantico(ERR_IFWHILE, $1.nlin, $1.ncol, "if");
+                }
             }
         ;
 
@@ -277,11 +292,29 @@ Range   : numint dosp numint
 
 Blq     : blq
             {
+                ts = new TablaSimbolos(ts);
+                numbloque++;
                 $$.cod = "";
             }
-        | blq Cod fblq
+            fblq
             {
-                $$.cod = $2.cod;
+                TablaSimbolos* tmp = ts;
+                ts = ts->getPadre();
+                delete tmp;
+                numbloque--;
+            }
+        | blq
+            {
+                ts = new TablaSimbolos(ts);
+                numbloque++;
+            }
+            Cod fblq
+            {
+                $$.cod = $3.cod;
+                TablaSimbolos* tmp = ts;
+                ts = ts->getPadre();
+                delete tmp;
+                numbloque--;
             }
         ;
 
@@ -297,17 +330,25 @@ Ip      : _else I fi
             {
 
             }
+        | /* empty */
+            {
+
+            }
         ;
 
 IT      : dosp Type
             {
                 // var id : tipo;
                 $$.tipo = $2.tipo;
+                $$.arrays = $2.arrays;
+                $$.size = $2.size;
             }
         | /* Vacío */
             {
                 // var id;  -> ENTERO implícito
                 $$.tipo = ENTERO;
+                $$.arrays = false;
+                $$.size = 1;
             }
         ;
 
@@ -522,16 +563,7 @@ F       : numint
 
 Ref     : id
             {
-                Simbolo* s = NULL;
-
-                // Buscar desde el nivel actual hacia arriba
-                for (int nivel = numbloque; nivel >= 0 && s == NULL; nivel--) {
-                    string nombreConPrefijo = $1.lexema;
-                    for (int i = 0; i < nivel; i++) {
-                        nombreConPrefijo += "_b" + to_string(i);
-                    }
-                    s = ts.searchSymb(nombreConPrefijo);
-                }
+                Simbolo* s = ts->searchSymb($1.lexema);
 
                 if (s != NULL)
                 {
