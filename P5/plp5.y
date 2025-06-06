@@ -91,7 +91,7 @@ Dim     : numint coma Dim
                 $$.size = atoi($1.lexema);
             }
         ;
-
+        
 Cod     : /* empty */
             {
                 $$.cod = "";
