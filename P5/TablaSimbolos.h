@@ -15,8 +15,6 @@ struct Simbolo {
     unsigned tipo;
     unsigned dir;
     unsigned tam;
-    std::vector<int> dims;
-    bool isArray;
 };
 
 

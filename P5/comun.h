@@ -3,12 +3,11 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
 
 using namespace std;
 
 //temp: variable temporal donde se ha guardado un Factor o resultado de operacion
-struct MITIPO
+typedef struct
 {
     char *lexema, *r1, *r2;
     string cod, temp, aux_lexema;
@@ -18,11 +17,7 @@ struct MITIPO
     int size;
     bool isVar, isOp;
     bool arrays;
-    std::vector<int> dims;      // tamaños de cada dimensión
-    std::vector<MITIPO> *lista; // para listas de expresiones
-};
-
-typedef struct MITIPO MITIPO;
+} MITIPO;
 
 #define YYSTYPE MITIPO
 
