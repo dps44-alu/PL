@@ -141,24 +141,24 @@ I       : Blq
                     {
                         if ($4.isOp)
                         {
-                            $$.cod = $4.cod;                                                        // E.cod
-                            $$.cod += "mov A " + to_string($2.dir) + "\n";                          // mov E.id id
+                            $$.cod = $4.cod;                        // E.cod
+                            $$.cod += "mov A " + to_string($2.dir) + "\n";
                         }
                         else
                         {
-                            $$.cod = "mov " + to_string($4.dir) + " " + to_string($2.dir) + "\n";   // mov E.id id
+                            $$.cod = "mov " + to_string($4.dir) + " " + to_string($2.dir) + "\n";
                         }
                     }
                     else
                     {
                         if ($4.isOp)
                         {
-                            $$.cod = $4.cod;                                                        // E.cod
-                            $$.cod = "mov #" + $4.cod + " " + to_string($2.dir) + "\n";             // mov E.num id
+                            $$.cod = $4.cod;                        // E.cod
+                            $$.cod += "mov A " + to_string($2.dir) + "\n";
                         }
                         else
                         {
-                            $$.cod = "mov #" + $4.cod + " " + to_string($2.dir) + "\n";             // mov E.num id
+                            $$.cod = "mov #" + $4.cod + " " + to_string($2.dir) + "\n";
                         }
                     }
                 }
@@ -235,17 +235,17 @@ I       : Blq
             {
                 numbloque--;
 
-                string e1 = "E" + to_string(numEtiqueta);
+                string e1 = "L" + to_string(numEtiqueta);
                 numEtiqueta++;
-                string e2 = "E" + to_string(numEtiqueta);
+                string e2 = "L" + to_string(numEtiqueta);
                 numEtiqueta++;
 
-                $$.cod = e1 + ":\n";            // e1;
+                $$.cod = e1 + "\n";            // e1;
                 $$.cod += $3.cod;               // E.cod
                 $$.cod += "jz " + e2 + "\n";    // jz e2
                 $$.cod += $4.cod;               // I.cod
                 $$.cod += "jmp " + e1 + "\n";   // jmp e1
-                $$.cod += e2 + ":\n";           // e2:
+                $$.cod += e2 + "\n";           // e2:
             }
         | loop
             {
@@ -261,13 +261,13 @@ I       : Blq
                     // Error
                 }
 
-                string e1 = "E" + to_string(numEtiqueta);
+                string e1 = "L" + to_string(numEtiqueta);
                 numEtiqueta++;
-                string e2 = "E" + to_string(numEtiqueta);
+                string e2 = "L" + to_string(numEtiqueta);
                 numEtiqueta++;
 
                 $$.cod = string("mov #") + $5.r1 + " " + to_string(s->dir) + "\n";  // mov Range.r1 id.dir
-                $$.cod += e1 + ":\n";                                               // e1:
+                $$.cod += e1 + "\n";                                               // e1:
                 $$.cod += "mov " + to_string(s->dir) + " A\n";                      // mov id.dir A
                 $$.cod += "muli #-1\n";                                             // muli #-1
                 $$.cod += string("addi #") + $5.r2 + "\n";                          // addi Range.r2
@@ -277,7 +277,7 @@ I       : Blq
                 $$.cod += "addi #1\n";                                              // addi #1
                 $$.cod += "mov A " + to_string(s->dir) + "\n";                      // mov A id.dir
                 $$.cod += "jmp " + e1 + "\n";                                       // jmp e1
-                $$.cod += e2 + ":\n";                                               // e2:
+                $$.cod += e2 + "\n";                                               // e2:
             }
         | _if E I Ip
             {
