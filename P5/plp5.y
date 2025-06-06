@@ -30,12 +30,13 @@ void yyerror(char *s);
 const int MEM_TOTAL = 16384;
 const int MEM_VAR   = 16000;
 
-TablaSimbolos   ts  = new TablaSimbolos(NULL);
+TablaSimbolos*  ts  = new TablaSimbolos(NULL);
 TablaTipos      tt  = TablaTipos();
 
 int posMemoria = 0;
 int numEtiqueta = 1;
 int numbloque = 0;
+vector<int> pilaMem;
 
 using namespace std;
 
@@ -87,14 +88,24 @@ Dim     : numint coma Dim
             }
         ;
 
-Cod     : Cod pyc I
+Cod     : I ListaI
             {
-                $$.cod = $1.cod + $3.cod;
+                $$.cod = $1.cod + $2.cod;
             }
-        | I
+        ;
+
+ListaI  : Sep I ListaI
             {
-                $$.cod = $1.cod;
+                $$.cod = $2.cod + $3.cod;
             }
+        | /* empty */
+            {
+                $$.cod = "";
+            }
+        ;
+
+Sep     : pyc Sep
+        | /* empty */
         ;
 
 I       : Blq
@@ -159,7 +170,7 @@ I       : Blq
                     newSymb.nombre += "_b" + to_string(i);
                 }
 
-                ts.newSymb(newSymb);
+                ts->newSymb(newSymb);
 
                 $$.cod = "mov #0 " + to_string(posMemoria) + "\n";     // mov #0 id
 
@@ -233,7 +244,7 @@ I       : Blq
             {
                 numbloque--;
 
-                Simbolo* s = ts.searchSymb($3.lexema);
+                Simbolo* s = ts->searchSymb($3.lexema);
                 if (s == NULL)
                 {
                     // Error
@@ -277,11 +288,27 @@ Range   : numint dosp numint
 
 Blq     : blq
             {
-                $$.cod = "";
+                pilaMem.push_back(posMemoria);
+                ts = new TablaSimbolos(ts);
+                numbloque++;
             }
-        | blq Cod fblq
+          OptCod fblq
             {
-                $$.cod = $2.cod;
+                posMemoria = pilaMem.back();
+                pilaMem.pop_back();
+                ts = ts->getPadre();
+                numbloque--;
+                $$.cod = $3.cod;
+            }
+        ;
+
+OptCod  : Cod
+            {
+                $$.cod = $1.cod;
+            }
+        | /* empty */
+            {
+                $$.cod = "";
             }
         ;
 
@@ -530,7 +557,7 @@ Ref     : id
                     for (int i = 0; i < nivel; i++) {
                         nombreConPrefijo += "_b" + to_string(i);
                     }
-                    s = ts.searchSymb(nombreConPrefijo);
+                    s = ts->searchSymb(nombreConPrefijo);
                 }
 
                 if (s != NULL)
