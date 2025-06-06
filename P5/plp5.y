@@ -421,7 +421,7 @@ Ip      : _else I fi
                 {
                     cond = string("mov ") + ($2.tipo==ENTERO?"#":"$") + $2.cod + " A\n";
                 }
-
+                
                 $$.cod = cond;
                 $$.cod += "jz " + e1 + "\n";
                 $$.cod += $3.cod;
