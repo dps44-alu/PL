@@ -150,7 +150,7 @@ I       : Blq
                         return string("mov ") + ($4.tipo==ENTERO?"#":"$") + $4.cod + " A\n";
                 };
 
-                string cod = cargaExpr();
+                string cod = $2.cod + cargaExpr();
 
                 if ($2.tipo != $4.tipo)
                 {
@@ -496,10 +496,10 @@ E       : E opas T
                     if ($3.isAddr)
                     {
                         int t2 = nuevoTemp($2.nlin, $2.ncol);
+                        codigo += "mov A " + to_string(t2) + "\n";  // guardar operando izquierdo
                         codigo += $3.cod;
                         codigo += "mov " + to_string($3.dir) + " A\n";
                         codigo += "mov @A A\n";
-                        codigo += "mov A " + to_string(t2) + "\n";
                         codigo += op + to_string(t2) + "\n";
                         liberaTemp();
                         liberaTemp();
@@ -559,7 +559,6 @@ E       : E opas T
 T       : T opmd F
             {
                 $$.isOp = true;
-                $1.isVar = false;
 
                 if ($1.tipo == REAL || $3.tipo == REAL)
                     $$.tipo = REAL;
@@ -596,10 +595,10 @@ T       : T opmd F
                     if ($3.isAddr)
                     {
                         int t2 = nuevoTemp($2.nlin, $2.ncol);
+                        codigo += "mov A " + to_string(t2) + "\n";  // guardar operando izquierdo
                         codigo += $3.cod;
                         codigo += "mov " + to_string($3.dir) + " A\n";
                         codigo += "mov @A A\n";
-                        codigo += "mov A " + to_string(t2) + "\n";
                         codigo += op + to_string(t2) + "\n";
                         liberaTemp();
                     }
@@ -616,6 +615,7 @@ T       : T opmd F
                 }
 
                 $$.cod = codigo;
+                $$.isVar = false;
             }
         | F
             {
@@ -670,7 +670,7 @@ Ref     : id
                     $$.tipo = s->tipo;
                     $$.dir = s->dir;
                     $$.isVar = true;
-                    $$.cod = to_string(s->dir);
+                    $$.cod = "";         // sin codigo extra por referencia simple
                     $$.dims = s->dims;
                     $$.isAddr = false;
                 }
@@ -731,7 +731,7 @@ Ref     : id
                 $$.dir = $4.dir;
                 $$.cod = $4.cod;
                 $$.cod += string("mov #") + to_string(s->dir) + " A\n";
-                $$.cod += "addr " + to_string($4.dir) + "\n";
+                $$.cod += "addi " + to_string($4.dir) + "\n";
                 $$.cod += "mov A " + to_string($4.dir) + "\n";
                 $$.isAddr = true;
             }
@@ -764,7 +764,7 @@ LExpr   : LExpr coma
 
                 if (factor != 1)
                     codigo += "muli #" + to_string(factor) + "\n";
-                codigo += "addr " + to_string($1.dir) + "\n";
+                codigo += "addi " + to_string($1.dir) + "\n";
                 codigo += "mov A " + to_string($1.dir) + "\n";
 
                 $$.cod = codigo;
