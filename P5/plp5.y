@@ -657,9 +657,12 @@ Ref     : id
                 }
 
                 $$.tipo = s->tipo;
-                $$.dir = s->dir; // sin calcular offset aun
                 $$.isVar = true;
-                $$.cod = to_string(s->dir);
+                $$.dir = $4.dir;
+                $$.cod = $4.cod;
+                $$.cod += string("mov #") + to_string(s->dir) + " A\n";
+                $$.cod += "addr " + to_string($4.dir) + "\n";
+                $$.cod += "mov A " + to_string($4.dir) + "\n";
             }
         ;
 
@@ -676,6 +679,25 @@ LExpr   : LExpr coma
                 $$.tiposIndices.push_back($4.tipo);
                 $$.comaPos = $1.comaPos;
                 $$.comaPos.push_back(make_pair($2.nlin, $2.ncol));
+                int factor = 1;
+                for (size_t j = dimActual; j < simboloActual->dims.size(); ++j)
+                    factor *= simboloActual->dims[j];
+
+                string codigo = $1.cod;
+                if ($4.isOp)
+                    codigo += $4.cod;
+                else if ($4.isVar)
+                    codigo += "mov " + to_string($4.dir) + " A\n";
+                else
+                    codigo += string("mov ") + ($4.tipo==ENTERO?"#":"$") + $4.cod + " A\n";
+
+                if (factor != 1)
+                    codigo += "muli #" + to_string(factor) + "\n";
+                codigo += "addr " + to_string($1.dir) + "\n";
+                codigo += "mov A " + to_string($1.dir) + "\n";
+
+                $$.cod = codigo;
+                $$.dir = $1.dir;
             }
         |
             {
@@ -689,6 +711,25 @@ LExpr   : LExpr coma
                 $$.tiposIndices.clear();
                 $$.tiposIndices.push_back($2.tipo);
                 $$.comaPos.clear();
+                int factor = 1;
+                for (size_t j = dimActual; j < simboloActual->dims.size(); ++j)
+                    factor *= simboloActual->dims[j];
+
+                int t = nuevoTemp($2.nlin, $2.ncol);
+                string codigo;
+                if ($2.isOp)
+                    codigo = $2.cod;
+                else if ($2.isVar)
+                    codigo = "mov " + to_string($2.dir) + " A\n";
+                else
+                    codigo = string("mov ") + ($2.tipo==ENTERO?"#":"$") + $2.cod + " A\n";
+
+                if (factor != 1)
+                    codigo += "muli #" + to_string(factor) + "\n";
+                codigo += "mov A " + to_string(t) + "\n";
+
+                $$.cod = codigo;
+                $$.dir = t;
             }
         ;
 
