@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -17,6 +19,10 @@ typedef struct
     int size;
     bool isVar, isOp;
     bool arrays;
+    int nindices;                      // numero de indices en una referencia
+    vector<int> tiposIndices;          // tipos de cada indice
+    vector<pair<int,int>> comaPos;     // posiciones de las comas entre indices
+    vector<int> dims;                  // dimensiones de un array
 } MITIPO;
 
 #define YYSTYPE MITIPO

@@ -30,12 +30,17 @@ void yyerror(char *s);
 const int MEM_TOTAL = 16384;
 const int MEM_VAR   = 16000;
 
-TablaSimbolos   ts  = new TablaSimbolos(NULL);
+TablaSimbolos*  ts  = new TablaSimbolos(NULL);
 TablaTipos      tt  = TablaTipos();
 
 int posMemoria = 0;
 int numEtiqueta = 1;
 int numbloque = 0;
+
+size_t dimEsperadas = 0;        // numero de dimensiones esperadas en una referencia
+size_t dimActual = 0;           // contador de indices leidos
+bool suprimirNodecl = false;    // para ignorar ERR_NODECL en indices sobrantes
+Simbolo* simboloActual = NULL;   // simbolo de la referencia de array actual
 
 using namespace std;
 
@@ -70,20 +75,34 @@ SType   : _int
 Type    : SType
             {
                 $$.tipo = $1.tipo;
+                $$.size = 1;
+                $$.arrays = false;
+                $$.dims.clear();
             }
         | array SType Dim
             {
-
+                $$.tipo = $2.tipo;
+                $$.size = $3.size;
+                $$.arrays = true;
+                $$.dims = $3.dims;
             }
         ;
 
 Dim     : numint coma Dim
             {
-
+                if (atoi($1.lexema) <= 0)
+                    errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
+                $$.size = atoi($1.lexema) * $3.size;
+                $$.dims.push_back(atoi($1.lexema));
+                $$.dims.insert($$.dims.end(), $3.dims.begin(), $3.dims.end());
             }
         | numint
             {
-
+                if (atoi($1.lexema) <= 0)
+                    errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
+                $$.size = atoi($1.lexema);
+                $$.dims.clear();
+                $$.dims.push_back(atoi($1.lexema));
             }
         ;
 
@@ -113,9 +132,7 @@ I       : Blq
                     }
                     else if ($2.tipo == ENTERO && $4.tipo == REAL)
                     {
-                        $$.cod = "mov " + to_string($4.dir) + " A\n";   // mov E.dir A
-                        $$.cod += "rtoi\n";                             // rtoi
-                        $$.cod += "mov A " + to_string($2.dir) + "\n";  // mov A Ref.dir
+                        errorSemantico(ERR_ASIG, $3.nlin, $3.ncol, "=");
                     }
                 }
                 else
@@ -152,18 +169,23 @@ I       : Blq
                 newSymb.nombre = $2.lexema;
                 newSymb.tipo = $3.tipo;
                 newSymb.dir = posMemoria;
-                newSymb.tam = 1;
+                newSymb.tam = ($3.arrays ? $3.size : 1);
+                newSymb.dims = $3.dims;
 
-                for (int i = 0; i < numbloque; i++)
+
+                if (!ts->newSymb(newSymb))
                 {
-                    newSymb.nombre += "_b" + to_string(i);
+                    errorSemantico(ERR_YADECL, $2.nlin, $2.ncol, $2.lexema);
                 }
 
-                ts.newSymb(newSymb);
+                if (posMemoria + newSymb.tam > MEM_VAR)
+                {
+                    errorSemantico(ERR_NOCABE, $2.nlin, $2.ncol, $2.lexema);
+                }
 
                 $$.cod = "mov #0 " + to_string(posMemoria) + "\n";     // mov #0 id
 
-                posMemoria += 1;
+                posMemoria += newSymb.tam;
             }
         | print E
             {
@@ -233,7 +255,7 @@ I       : Blq
             {
                 numbloque--;
 
-                Simbolo* s = ts.searchSymb($3.lexema);
+                Simbolo* s = ts->searchSymb($3.lexema);
                 if (s == NULL)
                 {
                     // Error
@@ -259,7 +281,10 @@ I       : Blq
             }
         | _if E I Ip
             {
-
+                if ($2.tipo != ENTERO)
+                {
+                    errorSemantico(ERR_IFWHILE, $1.nlin, $1.ncol, "if");
+                }
             }
         ;
 
@@ -277,11 +302,29 @@ Range   : numint dosp numint
 
 Blq     : blq
             {
+                ts = new TablaSimbolos(ts);
+                numbloque++;
                 $$.cod = "";
             }
-        | blq Cod fblq
+            fblq
             {
-                $$.cod = $2.cod;
+                TablaSimbolos* tmp = ts;
+                ts = ts->getPadre();
+                delete tmp;
+                numbloque--;
+            }
+        | blq
+            {
+                ts = new TablaSimbolos(ts);
+                numbloque++;
+            }
+            Cod fblq
+            {
+                $$.cod = $3.cod;
+                TablaSimbolos* tmp = ts;
+                ts = ts->getPadre();
+                delete tmp;
+                numbloque--;
             }
         ;
 
@@ -297,17 +340,27 @@ Ip      : _else I fi
             {
 
             }
+        | /* empty */
+            {
+
+            }
         ;
 
 IT      : dosp Type
             {
                 // var id : tipo;
                 $$.tipo = $2.tipo;
+                $$.arrays = $2.arrays;
+                $$.size = $2.size;
+                $$.dims = $2.dims;
             }
         | /* Vacío */
             {
                 // var id;  -> ENTERO implícito
                 $$.tipo = ENTERO;
+                $$.arrays = false;
+                $$.size = 1;
+                $$.dims.clear();
             }
         ;
 
@@ -522,42 +575,100 @@ F       : numint
 
 Ref     : id
             {
-                Simbolo* s = NULL;
-
-                // Buscar desde el nivel actual hacia arriba
-                for (int nivel = numbloque; nivel >= 0 && s == NULL; nivel--) {
-                    string nombreConPrefijo = $1.lexema;
-                    for (int i = 0; i < nivel; i++) {
-                        nombreConPrefijo += "_b" + to_string(i);
-                    }
-                    s = ts.searchSymb(nombreConPrefijo);
-                }
+                Simbolo* s = ts->searchSymb($1.lexema);
 
                 if (s != NULL)
                 {
                     $$.tipo = s->tipo;
                     $$.dir = s->dir;
                     $$.isVar = true;
-                    $$.cod = s->dir;
+                    $$.cod = to_string(s->dir);
+                    $$.dims = s->dims;
                 }
                 else
                 {
-                    errorSemantico(ERR_NODECL, $1.nlin, $1.ncol, $1.lexema);
+                    if (!suprimirNodecl)
+                        errorSemantico(ERR_NODECL, $1.nlin, $1.ncol, $1.lexema);
+                    $$.tipo = ENTERO;
+                    $$.dir = 0;
+                    $$.isVar = false;
                 }
             }
-        | id cori LExpr cord
+        | id {
+                simboloActual = ts->searchSymb($1.lexema);
+                if (simboloActual == NULL)
+                    errorSemantico(ERR_NODECL, $1.nlin, $1.ncol, $1.lexema);
+                dimEsperadas = simboloActual->dims.size();
+                dimActual = 0;
+                suprimirNodecl = false;
+            } cori LExpr cord
             {
+                Simbolo* s = simboloActual;
+                suprimirNodecl = false;
 
+                if (s->dims.empty())
+                {
+                    errorSemantico(ERR_SOBRAN, $3.nlin, $3.ncol, $1.lexema);
+                }
+
+                if ($4.nindices < s->dims.size())
+                {
+                    errorSemantico(ERR_FALTAN, $5.nlin, $5.ncol, $1.lexema);
+                }
+                if ($4.nindices > s->dims.size())
+                {
+                    size_t pos = s->dims.size();
+                    auto p = (pos == 0) ? make_pair($3.nlin, $3.ncol) : $4.comaPos[pos-1];
+                    errorSemantico(ERR_SOBRAN, p.first, p.second, $1.lexema);
+                }
+
+                for (size_t i = 0; i < $4.nindices; ++i)
+                {
+                    if ($4.tiposIndices[i] != ENTERO)
+                    {
+                        if (i == 0)
+                            errorSemantico(ERR_INDICE_ENTERO, $3.nlin, $3.ncol, $1.lexema);
+                        else
+                        {
+                            auto p = $4.comaPos[i-1];
+                            errorSemantico(ERR_INDICE_ENTERO, p.first, p.second, $1.lexema);
+                        }
+                    }
+                }
+
+                $$.tipo = s->tipo;
+                $$.dir = s->dir; // sin calcular offset aun
+                $$.isVar = true;
+                $$.cod = to_string(s->dir);
             }
         ;
 
-LExpr   : LExpr coma E
+LExpr   : LExpr coma
             {
-
+                dimActual++;
+                if (dimActual > dimEsperadas) suprimirNodecl = true;
             }
-        | E
+            E
             {
-
+                suprimirNodecl = false;
+                $$.nindices = $1.nindices + 1;
+                $$.tiposIndices = $1.tiposIndices;
+                $$.tiposIndices.push_back($4.tipo);
+                $$.comaPos = $1.comaPos;
+                $$.comaPos.push_back(make_pair($2.nlin, $2.ncol));
+            }
+        |
+            {
+                dimActual++;
+                if (dimActual > dimEsperadas) suprimirNodecl = true;
+            }
+            E
+            {
+                suprimirNodecl = false;
+                $$.nindices = 1;
+                $$.tiposIndices.clear();
+                $$.tiposIndices.push_back($2.tipo);
+                $$.comaPos.clear();
             }
         ;
 
