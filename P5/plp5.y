@@ -30,12 +30,13 @@ void yyerror(char *s);
 const int MEM_TOTAL = 16384;
 const int MEM_VAR   = 16000;
 
-TablaSimbolos   ts  = new TablaSimbolos(NULL);
+TablaSimbolos*  ts  = new TablaSimbolos(NULL);
 TablaTipos      tt  = TablaTipos();
 
 int posMemoria = 0;
 int numEtiqueta = 1;
 int numbloque = 0;
+vector<int> pilaMem;
 
 using namespace std;
 
@@ -70,31 +71,39 @@ SType   : _int
 Type    : SType
             {
                 $$.tipo = $1.tipo;
+                $$.size = 1;
+                $$.arrays = false;
             }
         | array SType Dim
             {
-
+                $$.tipo = $2.tipo;
+                $$.size = $3.size;
+                $$.arrays = true;
             }
         ;
 
 Dim     : numint coma Dim
             {
-
+                $$.size = atoi($1.lexema) * $3.size;
             }
         | numint
             {
-
+                $$.size = atoi($1.lexema);
             }
         ;
 
-Cod     : Cod pyc I
+Cod     : /* empty */
+            {
+                $$.cod = "";
+            }
+        | I Sep Cod
             {
                 $$.cod = $1.cod + $3.cod;
             }
-        | I
-            {
-                $$.cod = $1.cod;
-            }
+        ;
+
+Sep     : pyc Sep
+        | /* empty */
         ;
 
 I       : Blq
@@ -152,18 +161,29 @@ I       : Blq
                 newSymb.nombre = $2.lexema;
                 newSymb.tipo = $3.tipo;
                 newSymb.dir = posMemoria;
-                newSymb.tam = 1;
+                newSymb.tam = $3.size;
 
                 for (int i = 0; i < numbloque; i++)
                 {
                     newSymb.nombre += "_b" + to_string(i);
                 }
 
-                ts.newSymb(newSymb);
+                if (!ts->newSymb(newSymb))
+                {
+                    errorSemantico(ERR_YADECL, $2.nlin, $2.ncol, $2.lexema);
+                }
 
-                $$.cod = "mov #0 " + to_string(posMemoria) + "\n";     // mov #0 id
+                if (posMemoria + newSymb.tam > MEM_VAR)
+                {
+                    errorSemantico(ERR_NOCABE, $2.nlin, $2.ncol, $2.lexema);
+                }
+                $$.cod = "";
+                for (int i = 0; i < newSymb.tam; i++)
+                {
+                    $$.cod += "mov #0 " + to_string(posMemoria + i) + "\n";
+                }
 
-                posMemoria += 1;
+                posMemoria += newSymb.tam;
             }
         | print E
             {
@@ -233,7 +253,7 @@ I       : Blq
             {
                 numbloque--;
 
-                Simbolo* s = ts.searchSymb($3.lexema);
+                Simbolo* s = ts->searchSymb($3.lexema);
                 if (s == NULL)
                 {
                     // Error
@@ -277,10 +297,16 @@ Range   : numint dosp numint
 
 Blq     : blq
             {
-                $$.cod = "";
+                pilaMem.push_back(posMemoria);
+                ts = new TablaSimbolos(ts);
+                numbloque++;
             }
-        | blq Cod fblq
+          Cod fblq
             {
+                posMemoria = pilaMem.back();
+                pilaMem.pop_back();
+                ts = ts->getPadre();
+                numbloque--;
                 $$.cod = $2.cod;
             }
         ;
@@ -303,11 +329,15 @@ IT      : dosp Type
             {
                 // var id : tipo;
                 $$.tipo = $2.tipo;
+                $$.size = $2.size;
+                $$.arrays = $2.arrays;
             }
         | /* Vacío */
             {
                 // var id;  -> ENTERO implícito
                 $$.tipo = ENTERO;
+                $$.size = 1;
+                $$.arrays = false;
             }
         ;
 
@@ -530,7 +560,7 @@ Ref     : id
                     for (int i = 0; i < nivel; i++) {
                         nombreConPrefijo += "_b" + to_string(i);
                     }
-                    s = ts.searchSymb(nombreConPrefijo);
+                    s = ts->searchSymb(nombreConPrefijo);
                 }
 
                 if (s != NULL)
