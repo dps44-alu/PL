@@ -50,4 +50,3 @@ void errorSemantico (int nerror, int fila, int columna, const char *s);
 void msgError       (int nerror, int nlin, int ncol, const char *s);
 
 #endif
-
