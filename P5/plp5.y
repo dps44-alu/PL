@@ -111,44 +111,37 @@ Dim     : numint coma Dim
             {
                 if (atoi($1.lexema) <= 0)
                     errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
-                $$.size = atoi($1.lexema) * $3.size;
-                $$.dims.push_back(atoi($1.lexema));
-                $$.dims.insert($$.dims.end(), $3.dims.begin(), $3.dims.end());
-            }
-        | numint
-            {
-                if (atoi($1.lexema) <= 0)
-                    errorSemantico(ERR_DIM, $1.nlin, $1.ncol, $1.lexema);
-                $$.size = atoi($1.lexema);
-                $$.dims.clear();
-                $$.dims.push_back(atoi($1.lexema));
-            }
-        ;
-
-Cod     : Cod pyc I
-            {
-                $$.cod = $1.cod + $3.cod;
-            }
-        | I
-            {
-                $$.cod = $1.cod;
-            }
-        ;
-
-I       : Blq
-            {
-                $$.cod = $1.cod;
-            }
-        | let Ref asig E
-            {
-                if ($2.tipo != $4.tipo)
-                {
-                    if ($2.tipo == REAL && $4.tipo == ENTERO)
+                auto cargaExpr = [&]() -> string {
+                    if ($4.isOp)
+                        return $4.cod;
+                    else if ($4.isVar)
                     {
-                        if ($4.isOp)
-                        {
-                            $$.cod = $4.cod;                        // E.cod
-                        }
+                        if ($4.isAddr)
+                            return string("mov ") + to_string($4.dir) + " A\nmov @A A\n";
+                        else
+                            return string("mov ") + to_string($4.dir) + " A\n";
+                    }
+                    else
+                        return string("mov ") + ($4.tipo==ENTERO?"#":"$") + $4.cod + " A\n";
+                };
+
+                string cod = cargaExpr();
+
+                        cod += "itor\n";
+
+                if ($2.isAddr)
+                {
+                    cod += "mov A B\n";
+                    cod += "mov " + to_string($2.dir) + " A\n";
+                    cod += "mov B @A\n";
+                    liberaTemp();
+                }
+                    cod += "mov A " + to_string($2.dir) + "\n";
+
+                if ($4.isVar && $4.isAddr)
+                    liberaTemp();
+
+                $$.cod = cod;
                         else if ($4.isVar)
                         {
                             $$.cod = string("mov ") + to_string($4.dir) + " A\n";
@@ -428,11 +421,65 @@ Ip      : _else I fi
             }
         ;
 
-IT      : dosp Type
-            {
-                // var id : tipo;
-                $$.tipo = $2.tipo;
-                $$.arrays = $2.arrays;
+                {
+                    codigo = $1.cod;
+                    codigo += "mov " + to_string($1.dir) + " A\n";
+                    if ($1.isAddr)
+                    {
+                        codigo += "mov @A A\n";
+                        liberaTemp();
+                    }
+                }
+                    if ($3.isAddr)
+                    {
+                        int t2 = nuevoTemp($2.nlin, $2.ncol);
+                        codigo += $3.cod;
+                        codigo += "mov " + to_string($3.dir) + " A\n";
+                        codigo += "mov @A A\n";
+                        codigo += "mov A " + to_string(t2) + "\n";
+                        codigo += op + to_string(t2) + "\n";
+                        liberaTemp();
+                        liberaTemp();
+                    }
+                    else
+                    {
+                        codigo += op + to_string($3.dir) + "\n";
+                    }
+                {
+                    codigo = $2.cod;
+                    codigo += "mov " + to_string($2.dir) + " A\n";
+                    if ($2.isAddr)
+                    {
+                        codigo += "mov @A A\n";
+                        liberaTemp();
+                    }
+                }
+                {
+                    codigo = $1.cod;
+                    codigo += "mov " + to_string($1.dir) + " A\n";
+                    if ($1.isAddr)
+                        codigo += "mov @A A\n";
+                }
+                    if ($3.isAddr)
+                    {
+                        int t2 = nuevoTemp($2.nlin, $2.ncol);
+                        codigo += $3.cod;
+                        codigo += "mov " + to_string($3.dir) + " A\n";
+                        codigo += "mov @A A\n";
+                        codigo += "mov A " + to_string(t2) + "\n";
+                        codigo += op + to_string(t2) + "\n";
+                        liberaTemp();
+                    }
+                    else
+                    {
+                        codigo += op + to_string($3.dir) + "\n";
+                    }
+                $$.isAddr = false;
+                $$.isAddr = false;
+                $$.isAddr = false;
+                $$.isAddr = $1.isAddr;
+                    $$.isAddr = false;
+                    $$.isAddr = false;
                 $$.size = $2.size;
                 $$.dims = $2.dims;
             }
@@ -640,6 +687,7 @@ Ref     : id
                     errorSemantico(ERR_SOBRAN, $3.nlin, $3.ncol, $1.lexema);
                 }
 
+                $$.isAddr = true;
                 if ($4.nindices < s->dims.size())
                 {
                     errorSemantico(ERR_FALTAN, $5.nlin, $5.ncol, $1.lexema);

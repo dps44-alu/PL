@@ -18,6 +18,7 @@ typedef struct
     int dir;
     int size;
     bool isVar, isOp;
+    bool isAddr;                  // dir contiene una direccion de memoria
     bool arrays;
     int nindices;                      // numero de indices en una referencia
     vector<int> tiposIndices;          // tipos de cada indice
