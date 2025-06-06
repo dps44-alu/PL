@@ -51,7 +51,7 @@ void    msgError    (int nerror, int nlin, int ncol, const char *s);
 "read"              { return ret(_read);    }
 "if"                { return ret(_if);      }
 "else"              { return ret(_else);    }
-"elif"              { return ret(_else);    }
+"elif"              { return ret(elif);    }
 "fi"                { return ret(fi);       }
 "while"             { return ret(_while);   }
 "loop"              { return ret(loop);     }
