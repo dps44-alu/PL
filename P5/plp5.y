@@ -126,9 +126,20 @@ I       : Blq
                 {
                     if ($2.tipo == REAL && $4.tipo == ENTERO)
                     {
-                        $$.cod = string($2.lexema) + " mov " + to_string($4.dir) + " A\n";   // mov E.dir A
-                        $$.cod += "itor\n";                             // itor
-                        $$.cod += "mov A " + to_string($2.dir) + "\n";  // mov A Ref.dir
+                        if ($4.isOp)
+                        {
+                            $$.cod = $4.cod;                        // E.cod
+                        }
+                        else if ($4.isVar)
+                        {
+                            $$.cod = string("mov ") + to_string($4.dir) + " A\n";
+                        }
+                        else
+                        {
+                            $$.cod = string("mov #") + $4.cod + " A\n";
+                        }
+                        $$.cod += "itor\n";                         // convertir
+                        $$.cod += "mov A " + to_string($2.dir) + "\n";  // guardar
                     }
                     else if ($2.tipo == ENTERO && $4.tipo == REAL)
                     {
@@ -285,6 +296,31 @@ I       : Blq
                 {
                     errorSemantico(ERR_IFWHILE, $1.nlin, $1.ncol, "if");
                 }
+
+                string e1 = "L" + to_string(numEtiqueta++);
+                string e2 = "L" + to_string(numEtiqueta++);
+
+                string cond;
+                if ($2.isVar)
+                {
+                    cond = "mov " + to_string($2.dir) + " A\n";
+                }
+                else if ($2.isOp)
+                {
+                    cond = $2.cod;
+                }
+                else
+                {
+                    cond = string("mov ") + ($2.tipo==ENTERO?"#":"$") + $2.cod + " A\n";
+                }
+
+                $$.cod = cond;
+                $$.cod += "jz " + e1 + "\n";
+                $$.cod += $3.cod;
+                $$.cod += "jmp " + e2 + "\n";
+                $$.cod += e1 + "\n";
+                $$.cod += $4.cod;
+                $$.cod += e2 + "\n";
             }
         ;
 
@@ -330,19 +366,42 @@ Blq     : blq
 
 Ip      : _else I fi
             {
-
+                $$.cod = $2.cod;      // else branch
             }
         | elif E I Ip
             {
+                string e1 = "L" + to_string(numEtiqueta++);
+                string e2 = "L" + to_string(numEtiqueta++);
 
+                string cond;
+                if ($2.isVar)
+                {
+                    cond = "mov " + to_string($2.dir) + " A\n";
+                }
+                else if ($2.isOp)
+                {
+                    cond = $2.cod;
+                }
+                else
+                {
+                    cond = string("mov ") + ($2.tipo==ENTERO?"#":"$") + $2.cod + " A\n";
+                }
+
+                $$.cod = cond;
+                $$.cod += "jz " + e1 + "\n";
+                $$.cod += $3.cod;
+                $$.cod += "jmp " + e2 + "\n";
+                $$.cod += e1 + "\n";
+                $$.cod += $4.cod;
+                $$.cod += e2 + "\n";
             }
         | fi
             {
-
+                $$.cod = "";
             }
         | /* empty */
             {
-
+                $$.cod = "";
             }
         ;
 
