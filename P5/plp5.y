@@ -243,7 +243,26 @@ I       : Blq
             }
         | _read Ref
             {
+                string cod = $2.cod;
 
+                if ($2.tipo == ENTERO)
+                    cod += "rdi A\n";
+                else
+                    cod += "rdr A\n";
+
+                if ($2.isAddr)
+                {
+                    cod += "mov A B\n";
+                    cod += "mov " + to_string($2.dir) + " A\n";
+                    cod += "mov B @A\n";
+                    liberaTemp();
+                }
+                else
+                {
+                    cod += "mov A " + to_string($2.dir) + "\n";
+                }
+
+                $$.cod = cod;
             }
         | _while
             {
@@ -276,7 +295,11 @@ I       : Blq
                 Simbolo* s = ts->searchSymb($3.lexema);
                 if (s == NULL)
                 {
-                    // Error
+                    errorSemantico(ERR_NODECL, $3.nlin, $3.ncol, $3.lexema);
+                }
+                else if (s->tipo != ENTERO)
+                {
+                    errorSemantico(ERR_LOOP, $1.nlin, $1.ncol, "loop");
                 }
 
                 string e1 = "L" + to_string(numEtiqueta);
