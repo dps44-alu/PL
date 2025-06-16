@@ -27,6 +27,17 @@ extern char *yytext;
 extern FILE *yyin;
 void yyerror(char *s);
 
+/*
+ * Avoid memcpy on complex C++ semantic values by constructing
+ * each destination element with placement new.
+ */
+#undef YYCOPY
+#define YYCOPY(Dst, Src, Count)                                      \
+  do {                                                               \
+    for (size_t yyi = 0; yyi < (Count); ++yyi)                       \
+      new (&(Dst)[yyi]) MITIPO((Src)[yyi]);                          \
+  } while (0)
+
 const int MEM_TOTAL = 16384;
 const int MEM_VAR   = 16000;
 
