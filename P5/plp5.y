@@ -27,6 +27,16 @@ extern char *yytext;
 extern FILE *yyin;
 void yyerror(char *s);
 
+/*
+ * Avoid memcpy on complex C++ semantic values.
+ */
+#undef YYCOPY
+#define YYCOPY(Dst, Src, Count)                      \
+  do {                                              \
+    for (size_t yyi = 0; yyi < (Count); ++yyi)       \
+      (Dst)[yyi] = (Src)[yyi];                       \
+  } while (0)
+
 const int MEM_TOTAL = 16384;
 const int MEM_VAR   = 16000;
 
